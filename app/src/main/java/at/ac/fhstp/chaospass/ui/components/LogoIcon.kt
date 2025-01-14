@@ -2,6 +2,7 @@ package at.ac.fhstp.chaospass.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -18,24 +19,30 @@ import androidx.compose.ui.unit.dp
 fun LogoIcon() {
     Box(
         modifier = Modifier
-            .size(48.dp) // Adjust the size of the logo
+            .size(48.dp)
             .background(Color.Transparent, shape = MaterialTheme.shapes.small),
         contentAlignment = Alignment.Center
     ) {
-        // Lock icon in the background
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .background(Color.Black)
+        )
+
         Icon(
-            imageVector = Icons.Default.Lock, // Replace with your lock icon
+            imageVector = Icons.Default.Lock,
             contentDescription = "Logo Lock",
             tint = Color.Black,
             modifier = Modifier.size(48.dp)
         )
 
-        // Letters on top of the lock icon
         Text(
             text = "cP",
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 8.dp)
         )
     }
 }

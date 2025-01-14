@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -20,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import at.ac.fhstp.chaospass.ui.components.HeaderBox
 import at.ac.fhstp.chaospass.ui.components.ScreenWrapper
-import at.ac.fhstp.chaospass.ui.theme.AddGreen
 import at.ac.fhstp.chaospass.ui.theme.KeyBlue
 import at.ac.fhstp.chaospass.ui.viewmodel.SettingsViewModel
 
@@ -34,6 +32,7 @@ fun SettingsScreen(
     val chaosModeEnabled = viewModel.isChaosMode.collectAsState()
 
     ScreenWrapper(
+        onBackClick = { navController.popBackStack() },
         navController = navController,
         currentRoute = "settings"
     ) { paddingValues ->

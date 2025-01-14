@@ -175,7 +175,6 @@ fun PasswordListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeableEntryItem(
     entry: Entry,
@@ -183,8 +182,7 @@ fun SwipeableEntryItem(
     onClick: () -> Unit
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
-    val swipeThreshold = 100f // Adjust the threshold as needed
-
+    val swipeThreshold = 100f
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,9 +196,9 @@ fun SwipeableEntryItem(
                     },
                     onDragEnd = {
                         if (offsetX > swipeThreshold) {
-                            onSwipeRight() // Trigger the action for right swipe
+                            onSwipeRight()
                         }
-                        offsetX = 0f // Reset offset
+                        offsetX = 0f
                     }
                 )
             }
@@ -224,7 +222,7 @@ fun SwipeableEntryItem(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset(x = offsetX.dp) // Apply the drag offset
+                .offset(x = offsetX.dp)
                 .padding(vertical = 4.dp)
                 .clickable(onClick = onClick),
             elevation = CardDefaults.cardElevation(4.dp)

@@ -48,6 +48,7 @@ fun PasswordDetailScreen(
     val isPasswordVisible = remember { mutableStateOf(false) }
 
     ScreenWrapper(
+        onBackClick = { navController.popBackStack() },
         navController = navController,
         currentRoute = "details/{entryId}"
     ) { paddingValues ->

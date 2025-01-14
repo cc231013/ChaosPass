@@ -47,6 +47,7 @@ fun EditPasswordScreen(
     val isPasswordVisible = remember { mutableStateOf(false) }
 
     ScreenWrapper(
+        onBackClick = { navController.popBackStack() },
         navController = navController,
         currentRoute = "edit/{entryId}"
     ) { paddingValues ->

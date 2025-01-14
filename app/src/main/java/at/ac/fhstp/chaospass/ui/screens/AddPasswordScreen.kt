@@ -55,6 +55,7 @@ fun AddPasswordScreen(
     val isPasswordVisible = remember { mutableStateOf(false) }
 
     ScreenWrapper(
+        onBackClick = { navController.popBackStack() },
         navController = navController,
         currentRoute = "add"
 
