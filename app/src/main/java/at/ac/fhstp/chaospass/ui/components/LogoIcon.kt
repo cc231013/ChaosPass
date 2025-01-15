@@ -14,35 +14,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import at.ac.fhstp.chaospass.ui.theme.ChaosAddBlue
 
 @Composable
-fun LogoIcon() {
+fun LogoIcon(chaosModeEnabled: Boolean) {
+    // Colors and text based on chaos mode
+    val lockColor = if (chaosModeEnabled) ChaosAddBlue else Color.Black
+    val textColor = if (chaosModeEnabled) Color.Black else Color.White
+    val backgroundColor = if (chaosModeEnabled) ChaosAddBlue else Color.Black
+    val logoText = if (chaosModeEnabled) "Cp" else "cP"
+
     Box(
         modifier = Modifier
             .size(48.dp)
             .background(Color.Transparent, shape = MaterialTheme.shapes.small),
         contentAlignment = Alignment.Center
     ) {
+        // Background Box
         Box(
             modifier = Modifier
                 .size(20.dp)
-                .background(Color.Black)
+                .background(backgroundColor)
         )
 
+        // Lock Icon
         Icon(
             imageVector = Icons.Default.Lock,
             contentDescription = "Logo Lock",
-            tint = Color.Black,
+            tint = lockColor,
             modifier = Modifier.size(48.dp)
         )
 
+        // Text inside the lock icon
         Text(
-            text = "cP",
-            color = MaterialTheme.colorScheme.onPrimary,
+            text = logoText,
+            color = textColor,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 8.dp)
+                .offset(y = 8.dp) // Adjust position if necessary
         )
     }
 }

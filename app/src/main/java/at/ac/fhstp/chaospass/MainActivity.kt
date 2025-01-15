@@ -1,25 +1,31 @@
 package at.ac.fhstp.chaospass
 
+import SettingsDataStore
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricPrompt
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import at.ac.fhstp.chaospass.data.database.EntryDatabase
 import at.ac.fhstp.chaospass.data.repository.EntryRepository
+import at.ac.fhstp.chaospass.data.repository.SettingsRepository
 import at.ac.fhstp.chaospass.ui.AppNavGraph
-import at.ac.fhstp.chaospass.ui.theme.ChaosPassTheme // Import your custom theme
-import at.ac.fhstp.chaospass.ui.viewmodel.factory.EntryViewModelFactory
+import at.ac.fhstp.chaospass.ui.theme.ChaosPassTheme
+import at.ac.fhstp.chaospass.ui.viewmodel.SettingsViewModel
 import at.ac.fhstp.chaospass.utils.EncryptionHelper
 import at.ac.fhstp.chaospass.utils.KeyManager
-import at.ac.fhstp.chaospass.viewmodel.EntryViewModel
+
 
 class MainActivity : FragmentActivity() {
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -29,12 +35,23 @@ class MainActivity : FragmentActivity() {
         val secretKey = KeyManager.getOrCreateKey(this)
         val encryptionHelper = EncryptionHelper(secretKey)
         val repository = EntryRepository(database.entryDao(), encryptionHelper)
-        val viewModelFactory = EntryViewModelFactory(repository)
+
+        // Initialize SettingsDataStore and SettingsRepository
+        val settingsDataStore = SettingsDataStore(this)
+        val settingsRepository = SettingsRepository(settingsDataStore)
+        val settingsViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return SettingsViewModel(settingsRepository) as T
+            }
+        }).get(SettingsViewModel::class.java)
 
         setContent {
-            ChaosPassTheme { // Wrap the composables with your theme
+            // Observe chaos mode state
+            val chaosModeEnabled = settingsViewModel.isChaosMode.collectAsState().value
+
+            ChaosPassTheme(chaosModeEnabled = chaosModeEnabled) {
                 val isAuthenticated = remember { mutableStateOf(false) }
-                val coroutineScope = rememberCoroutineScope()
 
                 if (!isAuthenticated.value) {
                     // Trigger authentication when the app is launched
@@ -48,8 +65,7 @@ class MainActivity : FragmentActivity() {
                     }
                 } else {
                     // Show main app content after successful authentication
-                    val viewModel: EntryViewModel = viewModel(factory = viewModelFactory)
-                    AppNavGraph(repository = repository)
+                    AppNavGraph(repository = repository, chaosModeEnabled = chaosModeEnabled)
                 }
             }
         }
@@ -79,7 +95,7 @@ class MainActivity : FragmentActivity() {
 
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Authenticate")
-            .setSubtitle("Use biometrics or device PIN to access your password vault")
+            .setSubtitle("Use biometrics or device PIN to access ChaosPass")
             .setDeviceCredentialAllowed(true) // Allows PIN, pattern, or password as a fallback
             .build()
 

@@ -1,5 +1,6 @@
 package at.ac.fhstp.chaospass.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -12,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 
@@ -23,7 +25,8 @@ fun CustomOutlinedTextFieldWithIcon(
     isPasswordField: Boolean = false,
     isPasswordVisible: Boolean = false,
     onPasswordToggle: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge
 ) {
     OutlinedTextField(
         value = value,

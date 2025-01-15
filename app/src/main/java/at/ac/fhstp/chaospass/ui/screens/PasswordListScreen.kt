@@ -25,16 +25,14 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -58,14 +56,18 @@ import at.ac.fhstp.chaospass.ui.components.CustomOutlinedTextField
 import at.ac.fhstp.chaospass.ui.components.HeaderBox
 import at.ac.fhstp.chaospass.ui.components.ScreenWrapper
 import at.ac.fhstp.chaospass.ui.theme.AddGreen
+import at.ac.fhstp.chaospass.ui.theme.ChaosAddBlue
+import at.ac.fhstp.chaospass.ui.theme.ChaosKeyPink
 import at.ac.fhstp.chaospass.ui.theme.KeyBlue
+import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 import at.ac.fhstp.chaospass.viewmodel.EntryViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun PasswordListScreen(
     navController: NavHostController,
-    viewModel: EntryViewModel
+    viewModel: EntryViewModel,
+    chaosModeEnabled: State<Boolean>
 ) {
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -74,22 +76,37 @@ fun PasswordListScreen(
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var sortAscending by remember { mutableStateOf(true) }
     val entries by viewModel.entries.collectAsState()
+    var verticalOffset by remember { mutableStateOf(0f) }
 
     // Filter and sort entries
-    val filteredEntries = remember(searchQuery, sortAscending, entries) {
+    val filteredEntries = remember(searchQuery, sortAscending, entries, chaosModeEnabled.value) {
         entries.filter {
-            it.siteName.contains(searchQuery.text, ignoreCase = true)
+            if (chaosModeEnabled.value) {
+                // Chaos mode: Search by password
+                it.password.contains(searchQuery.text, ignoreCase = true)
+            } else {
+                // Normal mode: Search by site name
+                it.siteName.contains(searchQuery.text, ignoreCase = true)
+            }
         }.sortedWith(
-            if (sortAscending) compareBy { it.siteName.lowercase() }
-            else compareByDescending { it.siteName.lowercase() }
+            if (sortAscending) compareBy {
+                if (chaosModeEnabled.value) it.password.lastOrNull()?.lowercase() ?: ""
+                else it.siteName.lastOrNull()?.lowercase() ?: ""
+            } else compareByDescending {
+                if (chaosModeEnabled.value) it.password.lastOrNull()?.lowercase() ?: ""
+                else it.siteName.lastOrNull()?.lowercase() ?: ""
+            }
         )
     }
+
+
 
     val focusManager = LocalFocusManager.current
 
     ScreenWrapper(
         navController = navController,
-        currentRoute = "list"
+        currentRoute = "list",
+        chaosModeEnabled = chaosModeEnabled
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -107,7 +124,13 @@ fun PasswordListScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                HeaderBox(icon = Icons.Default.Key, rotation = 135f, backgroundColor = KeyBlue)
+                HeaderBox(
+                    icon = Icons.Default.Key, rotation = 135f, backgroundColor = getColorBasedOnMode(
+                    chaosModeEnabled.value,
+                    KeyBlue,
+                    ChaosKeyPink
+                )
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -115,11 +138,26 @@ fun PasswordListScreen(
                 ) {
                     CustomOutlinedTextField(
                         value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        label = "Search by Site Name",
+                        onValueChange = { newValue ->
+                            if (chaosModeEnabled.value) {
+                                // Apply random uppercase and lowercase transformation
+                                val transformedValue = newValue.text.map { char ->
+                                    if ((0..1).random() == 0) char.uppercaseChar() else char.lowercaseChar()
+                                }.joinToString("")
+                                searchQuery = TextFieldValue(transformedValue, newValue.selection)
+                            } else {
+                                // Allow normal input in normal mode
+                                searchQuery = newValue
+                            }
+
+                            // Update the vertical offset based on sorting order
+                            verticalOffset += if (sortAscending) -1f else 1f // Move slightly up or down
+                        },
+                        label = if (chaosModeEnabled.value) "Search by Password Character" else "Search by Site Name",
                         modifier = Modifier
                             .weight(1f)
-                            .onFocusChanged { /* Handle focus changes if needed */ },
+                            .offset(y = verticalOffset.dp) // Apply vertical movement
+                            .onFocusChanged { /* Handle focus changes if needed */ }
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -154,7 +192,8 @@ fun PasswordListScreen(
                                 },
                                 onClick = {
                                     navController.navigate("details/${entry.id}")
-                                }
+                                },
+                                chaosModeEnabled = chaosModeEnabled.value
                             )
                         }
                     }
@@ -166,7 +205,7 @@ fun PasswordListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
-                containerColor = AddGreen,
+                containerColor = getColorBasedOnMode(chaosModeEnabled.value, AddGreen, ChaosAddBlue),
                 contentColor = Color.Black
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Password")
@@ -179,10 +218,13 @@ fun PasswordListScreen(
 fun SwipeableEntryItem(
     entry: Entry,
     onSwipeRight: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    chaosModeEnabled: Boolean
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     val swipeThreshold = 100f
+    var isTransparent by remember { mutableStateOf(false) } // Transparency state for chaos mode
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,7 +238,12 @@ fun SwipeableEntryItem(
                     },
                     onDragEnd = {
                         if (offsetX > swipeThreshold) {
-                            onSwipeRight()
+                            if (chaosModeEnabled) {
+                                // Make the entry visually transparent
+                                isTransparent = true
+                            } else {
+                                onSwipeRight() // Normal behavior
+                            }
                         }
                         offsetX = 0f
                     }
@@ -213,7 +260,7 @@ fun SwipeableEntryItem(
             Icon(
                 imageVector = Icons.Default.ContentCopy,
                 contentDescription = "Copy Password",
-                tint = Color.Gray,
+                tint = if (chaosModeEnabled || isTransparent) Color.Transparent else Color.Gray,
                 modifier = Modifier.padding(start = 16.dp)
             )
         }
@@ -225,22 +272,22 @@ fun SwipeableEntryItem(
                 .offset(x = offsetX.dp)
                 .padding(vertical = 4.dp)
                 .clickable(onClick = onClick),
-            elevation = CardDefaults.cardElevation(4.dp)
+            elevation = CardDefaults.cardElevation(4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (chaosModeEnabled && isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface
+            )
         ) {
             Text(
                 text = entry.siteName,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.titleLarge
+                modifier = Modifier
+                    .padding(16.dp)
+                    .background(
+                        if (chaosModeEnabled && isTransparent) Color.Transparent else Color.Unspecified
+                    ),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = if (chaosModeEnabled && isTransparent) Color.Transparent else MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     }
 }
-
-
-
-
-
-
-
-
-

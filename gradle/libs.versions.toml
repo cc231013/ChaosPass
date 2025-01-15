@@ -2,6 +2,7 @@
 agp = "8.7.3"
 androidDatabaseSqlcipherVersion = "4.5.3"
 biometric = "1.2.0-alpha05"
+datastorePreferences = "1.1.1"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -26,6 +27,7 @@ animationCoreLint = "1.8.0-alpha07"
 android-database-sqlcipher-v453 = { module = "net.zetetic:android-database-sqlcipher", version.ref = "androidDatabaseSqlcipherVersion" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-material = { module = "androidx.compose.material:material", version.ref = "material" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }

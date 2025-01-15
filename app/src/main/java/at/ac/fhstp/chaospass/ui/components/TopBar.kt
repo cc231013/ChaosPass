@@ -20,12 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-
+import at.ac.fhstp.chaospass.ui.theme.ChaosKeyPink
+import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    onBackClick: (() -> Unit)? = null
+    onBackClick: (() -> Unit)? = null,
+    chaosModeEnabled: Boolean
 ) {
     TopAppBar(
         title = {
@@ -34,23 +36,40 @@ fun TopBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (onBackClick != null) {
-                    IconButton(onClick = { onBackClick() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Back",
-                            tint = Color.Black,
-                            modifier = Modifier.size(48.dp),
-                        )
+                if (chaosModeEnabled) {
+                    // Swap positions: Logo on the left, Back Button on the right
+                    LogoIcon(chaosModeEnabled = chaosModeEnabled)
+
+                    if (onBackClick != null) {
+                        IconButton(onClick = { onBackClick() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIosNew,
+                                contentDescription = "Back",
+                                tint = getColorBasedOnMode(chaosModeEnabled, Color.Black, ChaosKeyPink),
+                                modifier = Modifier.size(48.dp),
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder for consistent alignment
                     }
                 } else {
-                    Spacer(modifier = Modifier.width(48.dp)) // Placeholder for consistent alignment
-                }
+                    // Normal Mode: Back Button on the left, Logo on the right
+                    if (onBackClick != null) {
+                        IconButton(onClick = { onBackClick() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIosNew,
+                                contentDescription = "Back",
+                                tint = getColorBasedOnMode(chaosModeEnabled, Color.Black, ChaosKeyPink),
+                                modifier = Modifier.size(48.dp),
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder for consistent alignment
+                    }
 
+                    LogoIcon(chaosModeEnabled = chaosModeEnabled)
+                }
             }
-        },
-        actions = {
-            LogoIcon()
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
@@ -58,3 +77,4 @@ fun TopBar(
         )
     )
 }
+
