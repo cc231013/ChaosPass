@@ -1,8 +1,10 @@
 package at.ac.fhstp.chaospass
 
+import EncryptionHelper
 import SettingsDataStore
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -20,8 +22,6 @@ import at.ac.fhstp.chaospass.data.repository.SettingsRepository
 import at.ac.fhstp.chaospass.ui.AppNavGraph
 import at.ac.fhstp.chaospass.ui.theme.ChaosPassTheme
 import at.ac.fhstp.chaospass.ui.viewmodel.SettingsViewModel
-import at.ac.fhstp.chaospass.utils.EncryptionHelper
-import at.ac.fhstp.chaospass.utils.KeyManager
 
 
 class MainActivity : FragmentActivity() {
@@ -32,7 +32,21 @@ class MainActivity : FragmentActivity() {
         // Initialize dependencies
         val passphrase = "secure-passphrase" // Securely generate/retrieve this
         val database = EntryDatabase.getDatabase(applicationContext, passphrase)
-        val secretKey = KeyManager.getOrCreateKey(this)
+
+        // Function to log key details for debugging
+
+        // Validate or recreate the key
+        val secretKey = if (!KeyManager.isKeyValid()) {
+            Log.d("MainActivity", "Invalid or missing key, recreating...")
+            KeyManager.deleteKey() // Delete misconfigured key
+            KeyManager.getOrCreateKey(this) // Create a new key
+        } else {
+            KeyManager.getOrCreateKey(this) // Use the existing valid key
+        }
+
+
+
+        // Create EncryptionHelper with the secret key
         val encryptionHelper = EncryptionHelper(secretKey)
         val repository = EntryRepository(database.entryDao(), encryptionHelper)
 
@@ -46,16 +60,15 @@ class MainActivity : FragmentActivity() {
             }
         }).get(SettingsViewModel::class.java)
 
+        // Set up the app UI
         setContent {
-            // Observe chaos mode state
             val chaosModeEnabled = settingsViewModel.isChaosMode.collectAsState().value
-
             ChaosPassTheme(chaosModeEnabled = chaosModeEnabled) {
                 val isAuthenticated = remember { mutableStateOf(false) }
 
                 if (!isAuthenticated.value) {
-                    // Trigger authentication when the app is launched
-                    AuthenticateUser { success ->
+                    // Authenticate the user when the app starts
+                    authenticateUser { success ->
                         if (success) {
                             isAuthenticated.value = true
                         } else {
@@ -64,14 +77,15 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 } else {
-                    // Show main app content after successful authentication
+                    // Once authenticated, display the main app content
                     AppNavGraph(repository = repository, chaosModeEnabled = chaosModeEnabled)
                 }
             }
         }
     }
 
-    private fun AuthenticateUser(onResult: (Boolean) -> Unit) {
+    // Function to authenticate the user
+    private fun authenticateUser(onResult: (Boolean) -> Unit) {
         val executor = ContextCompat.getMainExecutor(this)
         val biometricPrompt = BiometricPrompt(
             this,
@@ -96,7 +110,7 @@ class MainActivity : FragmentActivity() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Authenticate")
             .setSubtitle("Use biometrics or device PIN to access ChaosPass")
-            .setDeviceCredentialAllowed(true) // Allows PIN, pattern, or password as a fallback
+            .setDeviceCredentialAllowed(true) // Allows PIN, pattern, or password as fallback
             .build()
 
         biometricPrompt.authenticate(promptInfo)

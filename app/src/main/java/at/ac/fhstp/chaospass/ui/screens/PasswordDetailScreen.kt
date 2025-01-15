@@ -2,7 +2,6 @@ package at.ac.fhstp.chaospass.ui.screens
 
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement

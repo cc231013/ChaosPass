@@ -1,8 +1,8 @@
 package at.ac.fhstp.chaospass.data.repository
 
+import EncryptionHelper
 import at.ac.fhstp.chaospass.data.dao.EntryDao
 import at.ac.fhstp.chaospass.data.entities.Entry
-import at.ac.fhstp.chaospass.utils.EncryptionHelper
 
 class EntryRepository(
     private val entryDao: EntryDao,
