@@ -3,17 +3,18 @@ package at.ac.fhstp.chaospass.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Delete
@@ -32,11 +33,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -58,15 +56,19 @@ import at.ac.fhstp.chaospass.ui.theme.ChaosAccept
 import at.ac.fhstp.chaospass.ui.theme.ChaosAddBlue
 import at.ac.fhstp.chaospass.ui.theme.ChaosBackground
 import at.ac.fhstp.chaospass.ui.theme.ChaosCancel
-import at.ac.fhstp.chaospass.ui.theme.ChaosEdit
 import at.ac.fhstp.chaospass.ui.theme.ChaosKeyPink
 import at.ac.fhstp.chaospass.ui.theme.ChaosOnBlack
 import at.ac.fhstp.chaospass.ui.theme.ChaosOnColour
 import at.ac.fhstp.chaospass.ui.theme.KeyBlue
-import at.ac.fhstp.chaospass.utils.ShakeDetector
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.CatchMeIfYouCan
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.FieldClicker
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.IconGuess
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.SimonSaysGame
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.TriviaGame
+import at.ac.fhstp.chaospass.utils.chaosmodeGames.TypeRace
+import at.ac.fhstp.chaospass.utils.copyToClipboard
 import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 import at.ac.fhstp.chaospass.viewmodel.EntryViewModel
-import kotlin.random.Random
 
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -79,48 +81,13 @@ fun PasswordDetailScreen(
 ) {
     val entry = viewModel.entries.collectAsState().value.find { it.id == entryId }
     val isPasswordVisible = remember { mutableStateOf(false) }
-    val isLeftButtonPressed = remember { mutableStateOf(false) }
-    val isRightButtonPressed = remember { mutableStateOf(false) }
-    val isPasswordRevealed = isLeftButtonPressed.value && isRightButtonPressed.value
-
-    val mockPasswords = listOf("wrong", "maybenexttime", "noooooo", "gotit Yet?", "not a chance")
-    val allPasswords = remember(entry?.password) { mockPasswords + (entry?.password.orEmpty()) }
-    var currentPasswordIndex by remember { mutableIntStateOf(0) }
-    var currentPassword by remember { mutableStateOf(allPasswords.first()) }
-    var isPasswordCorrect by remember { mutableStateOf(false) }
-    var hintVisible by remember { mutableStateOf(false) } // Hint visibility state
     val context = LocalContext.current
 
-    // Scenario Randomizer
-    val chaosScenario = if (chaosModeEnabled.value) remember { (1..4).random() } else 0
-
-    // Random fields count for Scenario 2
+    var hintVisible by remember { mutableStateOf(false) }
+    val chaosScenario = if (chaosModeEnabled.value) remember { (1..6).random() } else 0
     val hiddenFields = remember { mutableStateListOf(*Array((10..100).random()) { it }) }
     val hiddenFieldMessage = remember { mutableStateOf("Click to reveal your information!") }
 
-    // Shake detection logic (Scenario 3)
-    val shakeDetector = remember {
-        ShakeDetector(
-            context = context,
-            shakeThreshold = 12f,
-            onShake = {
-                // Cycle through passwords on shake
-                currentPasswordIndex = (currentPasswordIndex + 1) % allPasswords.size
-                currentPassword = allPasswords[currentPasswordIndex]
-                isPasswordCorrect = currentPassword == entry?.password
-            }
-        )
-    }
-
-    DisposableEffect(chaosModeEnabled) {
-        if (chaosModeEnabled.value && chaosScenario == 3) {
-            shakeDetector.startListening()
-        }
-
-        onDispose {
-            shakeDetector.stopListening()
-        }
-    }
 
     ScreenWrapper(
         onBackClick = { navController.popBackStack() },
@@ -132,7 +99,8 @@ fun PasswordDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(top= 16.dp, start = 16.dp, end = 16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -174,97 +142,12 @@ fun PasswordDetailScreen(
                         style = MaterialTheme.typography.titleLarge
                     )
 
-                    // Chaos Mode: Apply scenarios
                     if (chaosModeEnabled.value) {
                         when (chaosScenario) {
                             1 -> {
-                                // Scenario 1: Clickable hidden fields overlaying the username and password fields
-
-                                Box(modifier = Modifier.fillMaxWidth()) {
-                                    // Normal fields
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        InfoField(
-                                            label = "Username",
-                                            value = if (hiddenFields.isEmpty()) entry?.username.orEmpty() else "",
-                                            backgroundColor = getColorBasedOnMode(
-                                                chaosModeEnabled.value,
-                                                BackgroundBlue,
-                                                ChaosKeyPink
-                                            ),
-                                            labelColor = getColorBasedOnMode(
-                                                chaosModeEnabled.value,
-                                                BackgroundNavy,
-                                                ChaosOnColour
-                                            )
-                                        )
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            InfoField(
-                                                label = "Password",
-                                                value = if (isPasswordVisible.value) entry?.password.orEmpty() else "••••••••",
-                                                backgroundColor = getColorBasedOnMode(
-                                                    chaosModeEnabled.value,
-                                                    BackgroundBlue,
-                                                    ChaosKeyPink
-                                                ),
-                                                labelColor = getColorBasedOnMode(
-                                                    chaosModeEnabled.value,
-                                                    BackgroundNavy,
-                                                    ChaosOnColour
-                                                ),
-                                                modifier = Modifier.weight(1f)
-                                            )
-
-                                            IconButton(onClick = { isPasswordVisible.value = !isPasswordVisible.value }) {
-                                                Icon(
-                                                    imageVector = if (isPasswordVisible.value) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                    contentDescription = if (isPasswordVisible.value) "Hide password" else "Show password",
-                                                    tint = ChaosBackground
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // State to hold the random color for the button
-                                    val buttonColor = remember { mutableStateOf(ChaosEdit) }
-
-                                    // Overlaying hidden fields
-                                    if (hiddenFields.isNotEmpty()) {
-                                        Box(modifier = Modifier.matchParentSize()) {
-                                            hiddenFields.forEachIndexed { index, _ ->
-                                                Button(
-                                                    onClick = {
-                                                        hiddenFields.removeAt(index)
-
-                                                        // Update the button color to a random color
-                                                        buttonColor.value = Color(
-                                                            red = Random.nextInt(0, 256),
-                                                            green = Random.nextInt(0, 256),
-                                                            blue = Random.nextInt(0, 256)
-                                                        )
-
-                                                        hiddenFieldMessage.value = when {
-                                                            hiddenFields.isEmpty() -> "All fields cleared!"
-                                                            hiddenFields.size == 1 -> "One more to go!"
-                                                            else -> "Keep going, only ${hiddenFields.size} left!"
-                                                        }
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor.value),
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .fillMaxHeight(),
-                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
-                                                ) {
-                                                    Text(text = "Click me")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                FieldClicker(entry, chaosModeEnabled.value, hiddenFields, hiddenFieldMessage)
                             }else -> {
-                                // Scenario 2, 3, 4 handled below in the password section
+
                                 InfoField(
                                     label = "Username",
                                     value = entry?.username.orEmpty(),
@@ -298,136 +181,68 @@ fun PasswordDetailScreen(
                         if (chaosModeEnabled.value) {
                             when (chaosScenario) {
                                 2 -> {
-                                    // Scenario 2: Dual hold to reveal
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        IconButton(
-                                            onClick = { },
-                                            modifier = Modifier
-                                                .size(60.dp)
-                                                .pointerInput(Unit) {
-                                                    detectTapGestures(
-                                                        onPress = {
-                                                            isLeftButtonPressed.value = true
-                                                            tryAwaitRelease()
-                                                            isLeftButtonPressed.value = false
-                                                        }
-                                                    )
-                                                }
+                                    // Scenario 2: Find the right Icon
+                                        IconGuess(
+                                            entry, chaosModeEnabled.value
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Visibility,
-                                                contentDescription = "Hold left to reveal",
-                                                tint = ChaosBackground
-                                            )
-                                        }
-
-                                        InfoField(
-                                            label = "Password",
-                                            value = if (isPasswordRevealed) entry?.password.orEmpty() else "••••••••",
-                                            backgroundColor = getColorBasedOnMode(
-                                                chaosModeEnabled.value,
-                                                BackgroundBlue,
-                                                ChaosKeyPink
-                                            ),
-                                            labelColor = getColorBasedOnMode(
-                                                chaosModeEnabled.value,
-                                                Color.Black,
-                                                ChaosOnColour
-                                            ),
-                                            modifier = Modifier.weight(1f)
-                                        )
-
-                                        IconButton(
-                                            onClick = { },
-                                            modifier = Modifier
-                                                .size(60.dp)
-                                                .pointerInput(Unit) {
-                                                    detectTapGestures(
-                                                        onPress = {
-                                                            isRightButtonPressed.value = true
-                                                            tryAwaitRelease()
-                                                            isRightButtonPressed.value = false
-                                                        }
-                                                    )
-                                                }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Visibility,
-                                                contentDescription = "Hold right to reveal",
-                                                tint = ChaosBackground
-                                            )
-                                        }
-                                    }
+                                            isPasswordVisible.value = true
+                                }
                                 }
 
                                 3 -> {
-                                    // Scenario 3: Password and icon appear randomly on the screen
-                                    val handler = android.os.Handler(android.os.Looper.getMainLooper())
-                                    var timerStarted by remember { mutableStateOf(false) }
+                                    //Scenario 3: Moving Password
+                                    CatchMeIfYouCan(
+                                        currentPassword = entry?.password.orEmpty(),
+                                        onComplete = {}
+                                    )
+                                }
+                                4 -> {
+                                    // Scenario 4: Answer trivia questions
+                                    var isCorrectAnswer by remember { mutableStateOf(false) }
 
-                                    Box(
-                                        modifier = Modifier
-                                            .height(120.dp)
-                                            .fillMaxWidth()
-
-
-                                    ) {
-                                        if (isPasswordVisible.value) {
-                                            Text(
-                                                text = currentPassword,
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = Color((0..255).random(), (0..255).random(), (0..255).random()),
-                                                modifier = Modifier
-                                                    .align(Alignment.TopStart)
-                                                    .padding(
-                                                        start = (10..300).random().dp,
-                                                        top = (10..120).random().dp
-                                                    )
+                                    if (!isCorrectAnswer) {
+                                        if (entry != null) {
+                                            TriviaGame(
+                                                entry = entry,
+                                                password = entry.password,
+                                                onCorrectAnswer = { isCorrectAnswer = true },
+                                                modifier = Modifier.padding(16.dp)
                                             )
                                         }
-
-                                        IconButton(
-                                            onClick = {
-                                                isPasswordVisible.value = true
-                                                currentPassword = entry?.password.orEmpty()
-
-                                                if (!timerStarted) {
-                                                    timerStarted = true
-                                                    handler.postDelayed({
-                                                        isPasswordVisible.value = false
-                                                        timerStarted = false
-                                                    }, 5000) // Hide after 5 seconds
-                                                }
-                                            },
+                                    } else {
+                                        InfoField(
+                                            label = "Password",
+                                            value = entry?.password.orEmpty(),
+                                            backgroundColor = ChaosAccept,
+                                            labelColor = ChaosOnColour,
                                             modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .padding(
-                                                    start = (10..300).random().dp,
-                                                    top = (10..120).random().dp
-                                                )
-                                        ) {
-                                            Icon(
-                                                imageVector = if (isPasswordVisible.value) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                contentDescription = "Toggle password visibility",
-                                                tint = ChaosKeyPink
-                                            )
-                                        }
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    entry?.password?.let {
+                                                        copyToClipboard(context, "Password", it)
+                                                    }
+                                                }
+                                        )
                                     }
                                 }
-
-                                4-> {
-                                    // Scenario 4: Shake detection or default behavior
-                                    InfoField(
-                                        label = "Password",
-                                        value = currentPassword,
-                                        backgroundColor = if (chaosScenario == 3) {
-                                            if (isPasswordCorrect) ChaosAccept else ChaosCancel
-                                        } else getColorBasedOnMode(chaosModeEnabled.value, BackgroundBlue, ChaosEdit),
-                                        labelColor = BackgroundNavy,
-                                        modifier = Modifier.weight(1f)
+                                5 -> {
+                                    //Scenario 5: Colour Sequences
+                                    SimonSaysGame(
+                                        entry = entry,
+                                        chaosModeEnabled = chaosModeEnabled,
+                                        onComplete = { /* Handle completion */ },
+                                        context = LocalContext.current
+                                    )
+                                }
+                                6 -> {
+                                    // Scenario 6: Type the moving String
+                                    TypeRace(
+                                        entry = entry,
+                                        chaosModeEnabled = chaosModeEnabled.value,
+                                        onComplete = {
+                                            isPasswordVisible.value = true
+                                        },
+                                        context = context
                                     )
                                 }
 
@@ -440,6 +255,11 @@ fun PasswordDetailScreen(
                                 backgroundColor = getColorBasedOnMode(chaosModeEnabled.value, BackgroundBlue, ChaosKeyPink),
                                 labelColor = BackgroundNavy,
                                 modifier = Modifier.weight(1f)
+                                    .clickable {
+                                        entry?.password?.let {
+                                            copyToClipboard(context, "Password", it)
+                                        }
+                                    }
                             )
 
                             IconButton(onClick = { isPasswordVisible.value = !isPasswordVisible.value }) {
@@ -472,9 +292,11 @@ fun PasswordDetailScreen(
                         Text(
                             text = when (chaosScenario) {
                                 1 -> hiddenFieldMessage.value
-                                2 -> "Hold both icons to reveal the password!"
-                                3 -> "Click the toggle to make the password appear!"
-                                4 -> "Shake your phone to find your password!"
+                                2 -> "Oh no! Which one is it?"
+                                3 -> "Catch me if you can!"
+                                4 -> "Are you smart enough?"
+                                5 -> "Simon says: Click the Buttons!"
+                                6 -> "Fast! Enter the String!"
                                 else -> "Good luck!"
                             },
                             color = getColorBasedOnMode(
@@ -538,6 +360,7 @@ fun PasswordDetailScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (showConfirmationDialog) {
                 AlertDialog(
@@ -546,7 +369,7 @@ fun PasswordDetailScreen(
                     text = {
                         Text(
                             if (chaosModeEnabled.value) {
-                                "Deleting is not possible in Chaos Mode. Are you sure?"
+                                "Are you sure? It seems like a bad idea! Think again!"
                             } else {
                                 "Are you sure you want to delete this entry?"
                             }

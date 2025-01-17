@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cancel
@@ -21,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,7 +30,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +49,6 @@ import at.ac.fhstp.chaospass.ui.theme.KeyBlue
 import at.ac.fhstp.chaospass.utils.generateRandomPassword
 import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 import at.ac.fhstp.chaospass.viewmodel.EntryViewModel
-import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 @Composable
@@ -73,6 +72,7 @@ fun AddPasswordScreen(
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
     var cancelDialogCounter by remember { mutableStateOf(0) }
     val randomCancelLimit = remember { Random.nextInt(1, 10) }
+    val fieldsOrder = remember { mutableStateOf(listOf("Site Name", "Username", "Password")) }
 
     var saveDialogOffsetX by remember { mutableStateOf(0.dp) }
     var saveDialogOffsetY by remember { mutableStateOf(0.dp) }
@@ -95,7 +95,8 @@ fun AddPasswordScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -110,99 +111,100 @@ fun AddPasswordScreen(
 
             Text(text = "Add New Password", style = MaterialTheme.typography.titleLarge)
 
-            CustomOutlinedTextField(
-                value = siteName.value,
-                onValueChange = { input ->
-                    siteName.value = input
-
-                    if (chaosModeEnabled.value) {
-                        // Trigger horizontal movement
-                        siteNameTranslationX = (Random.nextInt(-20, 20)).toFloat()
-                        siteNameColor = Color(
-                            red = (0..255).random(),
-                            green = (0..255).random(),
-                            blue = (0..255).random()
+            fieldsOrder.value.forEach { field ->
+                when (field) {
+                    "Site Name" -> {
+                        CustomOutlinedTextField(
+                            value = siteName.value,
+                            onValueChange = { input ->
+                                siteName.value = input
+                                if (chaosModeEnabled.value) {
+                                    siteNameTranslationX = (Random.nextInt(-20, 20)).toFloat()
+                                    siteNameColor = Color(
+                                        red = (0..255).random(),
+                                        green = (0..255).random(),
+                                        blue = (0..255).random()
+                                    )
+                                }
+                            },
+                            label = "Site Name",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(x = siteNameTranslationX.dp)
+                                .let { baseModifier ->
+                                    if (chaosModeEnabled.value) {
+                                        baseModifier.background(siteNameColor)
+                                    } else baseModifier
+                                }
                         )
                     }
-                },
-                label = "Site Name",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(x = siteNameTranslationX.dp) // Apply horizontal movement
-                    .let { baseModifier ->
-                        if (chaosModeEnabled.value) {
-                            baseModifier.background(siteNameColor)
-                        } else baseModifier
-                    }
-            )
 
-            CustomOutlinedTextField(
-                value = username.value,
-                onValueChange = { input ->
-                    username.value = input
-
-                    if (chaosModeEnabled.value) {
-                        // Trigger rotation
-                        usernameRotation = (Random.nextInt(
-                            -15,
-                            15
-                        )).toFloat() // Random rotation between -15° and 15°
-                        usernameColor = Color(
-                            red = (0..255).random(),
-                            green = (0..255).random(),
-                            blue = (0..255).random()
+                    "Username" -> {
+                        CustomOutlinedTextField(
+                            value = username.value,
+                            onValueChange = { input ->
+                                username.value = input
+                                if (chaosModeEnabled.value) {
+                                    usernameRotation = (Random.nextInt(-15, 15)).toFloat()
+                                    usernameColor = Color(
+                                        red = (0..255).random(),
+                                        green = (0..255).random(),
+                                        blue = (0..255).random()
+                                    )
+                                }
+                            },
+                            label = "Username",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .graphicsLayer(rotationZ = usernameRotation)
+                                .let { baseModifier ->
+                                    if (chaosModeEnabled.value) {
+                                        baseModifier.background(usernameColor)
+                                    } else baseModifier
+                                }
                         )
                     }
-                },
-                label = "Username",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer(rotationZ = usernameRotation) // Apply rotation
-                    .let { baseModifier ->
-                        if (chaosModeEnabled.value) {
-                            baseModifier.background(usernameColor)
-                        } else baseModifier
-                    }
-            )
 
-            CustomOutlinedTextFieldWithIcon(
-                value = password.value,
-                onValueChange = { input ->
-                    password.value = input
-                    if (chaosModeEnabled.value) {
-                        // Trigger random horizontal movement
-                        passwordTranslationX = (Random.nextInt(-20, 20)).toFloat()
-
-                        // Trigger random rotation
-                        passwordRotation =
-                            (Random.nextInt(-15, 15)).toFloat() // Rotation between -15° and 15°
-
-                        // Change background color randomly
-                        passwordColor = Color(
-                            red = (0..255).random(),
-                            green = (0..255).random(),
-                            blue = (0..255).random()
+                    "Password" -> {
+                        CustomOutlinedTextFieldWithIcon(
+                            value = password.value,
+                            onValueChange = { input ->
+                                password.value = input
+                                if (chaosModeEnabled.value) {
+                                    passwordTranslationX = (Random.nextInt(-20, 20)).toFloat()
+                                    passwordRotation = (Random.nextInt(-15, 15)).toFloat()
+                                    passwordColor = Color(
+                                        red = (0..255).random(),
+                                        green = (0..255).random(),
+                                        blue = (0..255).random()
+                                    )
+                                }
+                            },
+                            label = "Password",
+                            isPasswordField = true,
+                            isPasswordVisible = isPasswordVisible.value,
+                            onPasswordToggle = { isPasswordVisible.value = !isPasswordVisible.value },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(x = passwordTranslationX.dp)
+                                .graphicsLayer(rotationZ = passwordRotation)
+                                .let { baseModifier ->
+                                    if (chaosModeEnabled.value) {
+                                        baseModifier.background(passwordColor)
+                                    } else baseModifier
+                                }
                         )
                     }
-                },
-                label = "Password",
-                isPasswordField = true,
-                isPasswordVisible = isPasswordVisible.value,
-                onPasswordToggle = { isPasswordVisible.value = !isPasswordVisible.value },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(x = passwordTranslationX.dp) // Apply horizontal movement
-                    .graphicsLayer(rotationZ = passwordRotation) // Apply rotation
-                    .let { baseModifier ->
-                        if (chaosModeEnabled.value) {
-                            baseModifier.background(passwordColor) // Apply color change
-                        } else baseModifier
-                    }
-            )
+                }
+            }
+
             Button(
                 onClick = {
                     val generatedPassword = generateRandomPassword()
                     password.value = generatedPassword
+                    if (chaosModeEnabled.value) {
+                        fieldsOrder.value = fieldsOrder.value.shuffled()
+                    }
                 },
                 modifier = Modifier.align(Alignment.End),
                 colors = ButtonDefaults.buttonColors(containerColor = KeyBlue)
@@ -214,7 +216,6 @@ fun AddPasswordScreen(
                 )
                 Text("Generate Password")
             }
-
             Spacer(modifier = Modifier.height(16.dp))
 
 
