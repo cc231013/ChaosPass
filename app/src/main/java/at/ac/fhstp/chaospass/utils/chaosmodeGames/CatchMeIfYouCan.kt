@@ -44,7 +44,7 @@ fun CatchMeIfYouCan(
         val runnable = object : Runnable {
             override fun run() {
                 randomOffsetX = (10..300).random().dp
-                randomOffsetY = (10..120).random().dp
+                randomOffsetY = (0..110).random().dp
                 randomColor = Color((0..255).random(), (0..255).random(), (0..255).random())
                 randomFontSize = (16..32).random().toFloat() // Convert to Float here as well
                 handler.postDelayed(this, 200L)

@@ -50,22 +50,4 @@ class EntryRepository(
         entryDao.deleteEntry(entry)
     }
 
-    suspend fun reEncryptAllEntries(newEncryptionHelper: EncryptionHelper) {
-        withContext(Dispatchers.IO) {
-            val allEntries = entryDao.getAllEntries()
-            allEntries.forEach { entry ->
-                val decryptedSiteName = encryptionHelper.decrypt(entry.siteName)
-                val decryptedUsername = encryptionHelper.decrypt(entry.username)
-                val decryptedPassword = encryptionHelper.decrypt(entry.password)
-
-                val reEncryptedEntry = Entry(
-                    id = entry.id,
-                    siteName = newEncryptionHelper.encrypt(decryptedSiteName),
-                    username = newEncryptionHelper.encrypt(decryptedUsername),
-                    password = newEncryptionHelper.encrypt(decryptedPassword)
-                )
-                entryDao.updateEntry(reEncryptedEntry)
-            }
-        }
-    }
 }

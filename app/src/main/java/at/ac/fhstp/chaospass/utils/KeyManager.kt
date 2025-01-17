@@ -30,7 +30,7 @@ object KeyManager {
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setUserAuthenticationRequired(true)
-            .setUserAuthenticationValidityDurationSeconds(8 * 60 * 60) // Valid for 8 hours
+            .setUserAuthenticationValidityDurationSeconds(8) // Valid for 8 hours
             .build()
 
         keyGenerator.init(keySpec)

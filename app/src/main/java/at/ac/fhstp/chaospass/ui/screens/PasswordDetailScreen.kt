@@ -197,31 +197,13 @@ fun PasswordDetailScreen(
                                     )
                                 }
                                 4 -> {
-                                    // Scenario 4: Answer trivia questions
-                                    var isCorrectAnswer by remember { mutableStateOf(false) }
-
-                                    if (!isCorrectAnswer) {
-                                        if (entry != null) {
-                                            TriviaGame(
-                                                entry = entry,
-                                                password = entry.password,
-                                                onCorrectAnswer = { isCorrectAnswer = true },
-                                                modifier = Modifier.padding(16.dp)
-                                            )
-                                        }
-                                    } else {
-                                        InfoField(
-                                            label = "Password",
-                                            value = entry?.password.orEmpty(),
-                                            backgroundColor = ChaosAccept,
-                                            labelColor = ChaosOnColour,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    entry?.password?.let {
-                                                        copyToClipboard(context, "Password", it)
-                                                    }
-                                                }
+                                    if (entry != null) {
+                                        TriviaGame(
+                                            entry = entry,
+                                            password = entry.password,
+                                            onCorrectAnswer = { /* Handle correct answer logic */ },
+                                            chaosModeEnabled = chaosModeEnabled.value, // Pass chaosModeEnabled here
+                                            modifier = Modifier.padding(16.dp)
                                         )
                                     }
                                 }

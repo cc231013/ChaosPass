@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,7 +26,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import at.ac.fhstp.chaospass.data.entities.Entry
 import at.ac.fhstp.chaospass.ui.components.InfoField
+import at.ac.fhstp.chaospass.ui.theme.ChaosKeyPink
 import at.ac.fhstp.chaospass.utils.copyToClipboard
+import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 import kotlin.random.Random
 
 @Composable
@@ -33,6 +36,7 @@ fun TriviaGame(
     password: String,
     entry: Entry,
     onCorrectAnswer: () -> Unit,
+    chaosModeEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     // Pool of trivia questions
@@ -59,11 +63,14 @@ fun TriviaGame(
         "What is the term for a star's explosive death?" to "supernova",
         "What language has the most native speakers?" to "mandarin",
         "What year did the Berlin Wall fall?" to "1989",
-        "What is 2+2?" to "4",
+        "How many syllables are in one?" to "1",
+        "How many choices do you have between apples and pears?" to "2",
         "How many little pigs where there?" to "3",
-        "How many spices are in fivespice?" to "5",
+        "What is 2+2?" to "4",
+        "How many spices are in five-spice?" to "5",
         "How many letters are in phones?" to "6",
-        "why was 8 afraid of 7?" to "789",
+        "Why was 8 afraid of 7?" to "789",
+        "What rhymes to yen?" to "10",
         "What is the currency of Japan?" to "yen",
         "Who is the author of 'A Brief History of Time'?" to "stephen hawking",
         "What was the name of the first man-made satellite launched into space?" to "sputnik",
@@ -126,23 +133,29 @@ fun TriviaGame(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // InfoField for the password
                 InfoField(
                     label = "Password",
                     value = if (isPasswordVisible) password else "••••••••",
-                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    backgroundColor = getColorBasedOnMode(
+                        chaosModeEnabled,
+                        MaterialTheme.colorScheme.surface,
+                        ChaosKeyPink
+                    ),
                     labelColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
-                                        .clickable {
-                                            copyToClipboard(context, "Password", entry.password)
-                                        }
+                        .clickable {
+                            copyToClipboard(context, "Password", password)
+                        }
                 )
 
-                // Visibility toggle button
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                IconButton(
+                    onClick = { isPasswordVisible = !isPasswordVisible },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(
                         imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password"
+                        contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password",
+                        tint = ChaosKeyPink
                     )
                 }
             }
