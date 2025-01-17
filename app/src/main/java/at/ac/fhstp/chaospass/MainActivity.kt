@@ -35,10 +35,16 @@ class MainActivity : FragmentActivity() {
         val passphrase = "secure-passphrase" // Securely generate/retrieve this
         val database = EntryDatabase.getDatabase(applicationContext, passphrase)
 
-        // Declare secretKey as a mutable variable
+        // Validate or recreate the key, and handle re-encryption if necessary
         var secretKey: SecretKey? = null
 
-        // Validate or recreate the key, and handle re-encryption if necessary
+        // Check if the key is valid
+        if (!KeyManager.isKeyValid()) {
+            Log.d("MainActivity", "Key is invalid or expired. Deleting old key...")
+            KeyManager.deleteKey() // Delete the old invalid key
+        }
+
+        // Get or create the encryption key, with key rotation handling
         secretKey = KeyManager.getOrCreateKey(this) { newKey ->
             Log.d("MainActivity", "Key rotation detected. Re-encrypting data with new key...")
 
@@ -119,7 +125,7 @@ class MainActivity : FragmentActivity() {
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Authenticate")
             .setSubtitle("Use biometrics or device PIN to access ChaosPass")
-            .setDeviceCredentialAllowed(true) // Allows PIN, pattern, or password as fallback
+            .setDeviceCredentialAllowed(true)
             .build()
 
         biometricPrompt.authenticate(promptInfo)
