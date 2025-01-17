@@ -1,6 +1,6 @@
 package at.ac.fhstp.chaospass
 
-import EncryptionHelper
+import at.ac.fhstp.chaospass.utils.EncryptionHelper
 import SettingsDataStore
 import android.os.Build
 import android.os.Bundle
@@ -22,7 +22,9 @@ import at.ac.fhstp.chaospass.data.repository.SettingsRepository
 import at.ac.fhstp.chaospass.ui.AppNavGraph
 import at.ac.fhstp.chaospass.ui.theme.ChaosPassTheme
 import at.ac.fhstp.chaospass.ui.viewmodel.SettingsViewModel
-
+import at.ac.fhstp.chaospass.utils.KeyManager
+import kotlinx.coroutines.runBlocking
+import javax.crypto.SecretKey
 
 class MainActivity : FragmentActivity() {
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -33,21 +35,31 @@ class MainActivity : FragmentActivity() {
         val passphrase = "secure-passphrase" // Securely generate/retrieve this
         val database = EntryDatabase.getDatabase(applicationContext, passphrase)
 
-        // Function to log key details for debugging
+        // Declare secretKey as a mutable variable
+        var secretKey: SecretKey? = null
 
-        // Validate or recreate the key
-        val secretKey = if (!KeyManager.isKeyValid()) {
-            Log.d("MainActivity", "Invalid or missing key, recreating...")
-            KeyManager.deleteKey() // Delete misconfigured key
-            KeyManager.getOrCreateKey(this) // Create a new key
-        } else {
-            KeyManager.getOrCreateKey(this) // Use the existing valid key
+        // Validate or recreate the key, and handle re-encryption if necessary
+        secretKey = KeyManager.getOrCreateKey(this) { newKey ->
+            Log.d("MainActivity", "Key rotation detected. Re-encrypting data with new key...")
+
+            // Initialize the EncryptionHelper for the old and new keys
+            val oldHelper = secretKey?.let { EncryptionHelper(it) }
+            val newHelper = EncryptionHelper(newKey)
+
+            // Re-encrypt data in the database
+            oldHelper?.let { oldEncryptionHelper ->
+                val repository = EntryRepository(database.entryDao(), oldEncryptionHelper)
+                runBlocking {
+                    repository.reEncryptAllEntries(newHelper)
+                }
+            }
+
+            Log.d("MainActivity", "Re-encryption complete.")
+            secretKey = newKey // Update the secretKey reference to the new key
         }
 
-
-
         // Create EncryptionHelper with the secret key
-        val encryptionHelper = EncryptionHelper(secretKey)
+        val encryptionHelper = EncryptionHelper(secretKey!!)
         val repository = EntryRepository(database.entryDao(), encryptionHelper)
 
         // Initialize SettingsDataStore and SettingsRepository
@@ -67,7 +79,6 @@ class MainActivity : FragmentActivity() {
                 val isAuthenticated = remember { mutableStateOf(false) }
 
                 if (!isAuthenticated.value) {
-                    // Authenticate the user when the app starts
                     authenticateUser { success ->
                         if (success) {
                             isAuthenticated.value = true
@@ -77,14 +88,12 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 } else {
-                    // Once authenticated, display the main app content
                     AppNavGraph(repository = repository, chaosModeEnabled = chaosModeEnabled)
                 }
             }
         }
     }
 
-    // Function to authenticate the user
     private fun authenticateUser(onResult: (Boolean) -> Unit) {
         val executor = ContextCompat.getMainExecutor(this)
         val biometricPrompt = BiometricPrompt(

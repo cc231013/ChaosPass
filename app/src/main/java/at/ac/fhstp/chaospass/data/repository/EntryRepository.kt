@@ -1,8 +1,11 @@
 package at.ac.fhstp.chaospass.data.repository
 
-import EncryptionHelper
+import at.ac.fhstp.chaospass.utils.EncryptionHelper
 import at.ac.fhstp.chaospass.data.dao.EntryDao
 import at.ac.fhstp.chaospass.data.entities.Entry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 class EntryRepository(
     private val entryDao: EntryDao,
@@ -45,5 +48,24 @@ class EntryRepository(
 
     suspend fun deleteEntry(entry: Entry) {
         entryDao.deleteEntry(entry)
+    }
+
+    suspend fun reEncryptAllEntries(newEncryptionHelper: EncryptionHelper) {
+        withContext(Dispatchers.IO) {
+            val allEntries = entryDao.getAllEntries()
+            allEntries.forEach { entry ->
+                val decryptedSiteName = encryptionHelper.decrypt(entry.siteName)
+                val decryptedUsername = encryptionHelper.decrypt(entry.username)
+                val decryptedPassword = encryptionHelper.decrypt(entry.password)
+
+                val reEncryptedEntry = Entry(
+                    id = entry.id,
+                    siteName = newEncryptionHelper.encrypt(decryptedSiteName),
+                    username = newEncryptionHelper.encrypt(decryptedUsername),
+                    password = newEncryptionHelper.encrypt(decryptedPassword)
+                )
+                entryDao.updateEntry(reEncryptedEntry)
+            }
+        }
     }
 }
