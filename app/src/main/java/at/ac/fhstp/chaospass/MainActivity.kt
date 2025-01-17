@@ -35,7 +35,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val passphrase = "secure-passphrase" // Securely generate/retrieve this
+        val passphrase = "secure-passphrase"
         val database = EntryDatabase.getDatabase(applicationContext, passphrase)
 
         authenticateUser { success ->

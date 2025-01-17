@@ -37,16 +37,38 @@ fun TriviaGame(
 ) {
     // Pool of trivia questions
     val triviaQuestions = listOf(
-        "What is 2 + 2?" to "4",
-        "What is the capital of France?" to "paris",
-        "Spell 'password'" to "password",
-        "What color is the sky?" to "blue",
-        "What is 5 * 3?" to "15",
-        "What planet is known as the Red Planet?" to "mars",
-        "Who wrote 'Hamlet'?" to "shakespeare",
-        "What is the largest ocean on Earth?" to "pacific",
-        "What is the square root of 16?" to "4",
-        "How many days are in a leap year?" to "366"
+        "What is the derivative of x^2?" to "2x",
+        "Who painted the Sistine Chapel ceiling?" to "michelangelo",
+        "What is the capital of Australia?" to "canberra",
+        "What element has the atomic number 79?" to "gold",
+        "What is the smallest prime number?" to "2",
+        "What year did the Titanic sink?" to "1912",
+        "What is the longest river in the world?" to "nile",
+        "In what year was the first iPhone released?" to "2007",
+        "What is the term for a word spelled the same forward and backward?" to "palindrome",
+        "What is the sum of the angles in a triangle?" to "180",
+        "What is the hexadecimal value of the number 255?" to "ff",
+        "What is the name of the AI in '2001: A Space Odyssey'?" to "hal",
+        "What is the binary representation of the decimal number 10?" to "1010",
+        "What does HTTP stand for?" to "hypertext transfer protocol",
+        "Who directed the movie 'The Matrix'?" to "wachowskis",
+        "What is the name of the computer in 'The Hitchhiker's Guide to the Galaxy' that calculated 42?" to "deep thought",
+        "What is the first element on the periodic table?" to "hydrogen",
+        "What is the capital city of Iceland?" to "reykjavik",
+        "Who won the first Nobel Prize in Physics?" to "roentgen",
+        "What is the term for a star's explosive death?" to "supernova",
+        "What language has the most native speakers?" to "mandarin",
+        "What year did the Berlin Wall fall?" to "1989",
+        "What is 2+2?" to "4",
+        "How many little pigs where there?" to "3",
+        "How many spices are in fivespice?" to "5",
+        "How many letters are in phones?" to "6",
+        "why was 8 afraid of 7?" to "789",
+        "What is the currency of Japan?" to "yen",
+        "Who is the author of 'A Brief History of Time'?" to "stephen hawking",
+        "What was the name of the first man-made satellite launched into space?" to "sputnik",
+        "What is the square root of 256?" to "16",
+        "What is the largest planet in the Solar System?" to "jupiter"
     )
 
     var currentQuestionIndex by remember { mutableStateOf(Random.nextInt(triviaQuestions.size)) }
@@ -75,7 +97,7 @@ fun TriviaGame(
                 imeAction = ImeAction.Done,
                 keyboardType = KeyboardType.Text
             ),
-            keyboardActions = KeyboardActions(onDone = { /* Handle keyboard dismissal */ }),
+            keyboardActions = KeyboardActions(onDone = {}),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -88,11 +110,11 @@ fun TriviaGame(
         Button(onClick = {
             if (answer.equals(triviaQuestions[currentQuestionIndex].second, ignoreCase = true)) {
                 feedbackMessage = "Correct!"
-                onCorrectAnswer() // Trigger onCorrectAnswer callback
+                onCorrectAnswer()
             } else {
-                feedbackMessage = "Wrong! Try a new question."
+                feedbackMessage = "Wrong! Try again."
                 currentQuestionIndex = Random.nextInt(triviaQuestions.size) // Pick a new question
-                answer = "" // Clear the answer field
+                answer = ""
             }
         }) {
             Text("Submit")

@@ -276,7 +276,7 @@ fun EditPasswordScreen(
                     onClick = {
                         if (chaosModeEnabled.value) {
                             // Random countdown dialog in chaos mode
-                            countdownValue = (3..10).random()
+                            countdownValue = (3..25).random()
                             showCancelDialog = true
                             coroutineScope.launch {
                                 while (countdownValue > 0) {
@@ -349,8 +349,8 @@ fun EditPasswordScreen(
                 title = { Text("Please wait...") },
                 text = { Text("You can cancel in $countdownValue seconds.") },
                 confirmButton = {
-                    TextButton(onClick = { navController.popBackStack() }) {
-                        Text("OK")
+                    TextButton(onClick = {}) {
+                        Text("I do not work right now. You have to Wait...")
                     }
                 },
                 dismissButton = null
