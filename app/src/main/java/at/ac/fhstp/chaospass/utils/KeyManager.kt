@@ -10,21 +10,18 @@ import javax.crypto.SecretKey
 
 
 object KeyManager {
-
     private const val KEY_ALIAS = "password_manager_key"
 
-    fun getOrCreateKey(context: Context, onKeyRotation: ((SecretKey) -> Unit)? = null): SecretKey {
+    fun getOrCreateKey(context: Context): SecretKey {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
         // Check if the key already exists
         val existingKey = keyStore.getKey(KEY_ALIAS, null) as? SecretKey
         if (existingKey != null) {
-            Log.d("KeyManager", "Existing key found")
             return existingKey
         }
 
-        // If key doesn't exist or rotation is required, create a new key
-        Log.d("KeyManager", "Creating a new key...")
+        // Create a new key if it doesn't exist
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
         val keySpec = KeyGenParameterSpec.Builder(
             KEY_ALIAS,
@@ -37,24 +34,15 @@ object KeyManager {
             .build()
 
         keyGenerator.init(keySpec)
-        val newKey = keyGenerator.generateKey()
-
-        // Invoke the callback if provided
-        onKeyRotation?.invoke(newKey)
-
-        return newKey
+        return keyGenerator.generateKey()
     }
 
+    // Use this method only for explicit reset actions!
     fun deleteKey() {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         if (keyStore.containsAlias(KEY_ALIAS)) {
             keyStore.deleteEntry(KEY_ALIAS)
             Log.d("KeyManager", "Key deleted.")
         }
-    }
-
-    fun isKeyValid(): Boolean {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        return keyStore.getKey(KEY_ALIAS, null) != null
     }
 }

@@ -23,79 +23,52 @@ import at.ac.fhstp.chaospass.ui.AppNavGraph
 import at.ac.fhstp.chaospass.ui.theme.ChaosPassTheme
 import at.ac.fhstp.chaospass.ui.viewmodel.SettingsViewModel
 import at.ac.fhstp.chaospass.utils.KeyManager
-import kotlinx.coroutines.runBlocking
+import at.ac.fhstp.chaospass.utils.SessionKeyManager
 import javax.crypto.SecretKey
 
+
+
 class MainActivity : FragmentActivity() {
+    private var sessionKey: SecretKey? = null // In-memory session key
+
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize dependencies
         val passphrase = "secure-passphrase" // Securely generate/retrieve this
         val database = EntryDatabase.getDatabase(applicationContext, passphrase)
 
-        // Validate or recreate the key, and handle re-encryption if necessary
-        var secretKey: SecretKey? = null
+        authenticateUser { success ->
+            if (success) {
+                val secretKey = KeyManager.getOrCreateKey(this)
+                SessionKeyManager.setKey(secretKey) // Store key in the session
 
-        // Check if the key is valid
-        if (!KeyManager.isKeyValid()) {
-            Log.d("MainActivity", "Key is invalid or expired. Deleting old key...")
-            KeyManager.deleteKey() // Delete the old invalid key
-        }
+                val encryptionHelper = EncryptionHelper()
+                val repository = EntryRepository(database.entryDao(), encryptionHelper)
 
-        // Get or create the encryption key, with key rotation handling
-        secretKey = KeyManager.getOrCreateKey(this) { newKey ->
-            Log.d("MainActivity", "Key rotation detected. Re-encrypting data with new key...")
+                setContent {
+                    val settingsDataStore = SettingsDataStore(this)
+                    val settingsRepository = SettingsRepository(settingsDataStore)
+                    val settingsViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return SettingsViewModel(settingsRepository) as T
+                        }
+                    }).get(SettingsViewModel::class.java)
 
-            // Initialize the EncryptionHelper for the old and new keys
-            val oldHelper = secretKey?.let { EncryptionHelper(it) }
-            val newHelper = EncryptionHelper(newKey)
+                    val chaosModeEnabled = settingsViewModel.isChaosMode.collectAsState().value
+                    ChaosPassTheme(chaosModeEnabled = chaosModeEnabled) {
+                        val isAuthenticated = remember { mutableStateOf(true) }
 
-            // Re-encrypt data in the database
-            oldHelper?.let { oldEncryptionHelper ->
-                val repository = EntryRepository(database.entryDao(), oldEncryptionHelper)
-                runBlocking {
-                    repository.reEncryptAllEntries(newHelper)
-                }
-            }
-
-            Log.d("MainActivity", "Re-encryption complete.")
-            secretKey = newKey // Update the secretKey reference to the new key
-        }
-
-        // Create EncryptionHelper with the secret key
-        val encryptionHelper = EncryptionHelper(secretKey!!)
-        val repository = EntryRepository(database.entryDao(), encryptionHelper)
-
-        // Initialize SettingsDataStore and SettingsRepository
-        val settingsDataStore = SettingsDataStore(this)
-        val settingsRepository = SettingsRepository(settingsDataStore)
-        val settingsViewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return SettingsViewModel(settingsRepository) as T
-            }
-        }).get(SettingsViewModel::class.java)
-
-        // Set up the app UI
-        setContent {
-            val chaosModeEnabled = settingsViewModel.isChaosMode.collectAsState().value
-            ChaosPassTheme(chaosModeEnabled = chaosModeEnabled) {
-                val isAuthenticated = remember { mutableStateOf(false) }
-
-                if (!isAuthenticated.value) {
-                    authenticateUser { success ->
-                        if (success) {
-                            isAuthenticated.value = true
-                        } else {
-                            Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
-                            finish() // Exit the app if authentication fails
+                        // Display app content if authenticated
+                        if (isAuthenticated.value) {
+                            AppNavGraph(repository = repository, chaosModeEnabled = chaosModeEnabled)
                         }
                     }
-                } else {
-                    AppNavGraph(repository = repository, chaosModeEnabled = chaosModeEnabled)
                 }
+            } else {
+                Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show()
+                finish()
             }
         }
     }
