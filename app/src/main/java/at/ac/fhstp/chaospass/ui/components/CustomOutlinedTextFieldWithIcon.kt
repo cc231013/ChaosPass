@@ -1,6 +1,5 @@
 package at.ac.fhstp.chaospass.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -13,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -26,8 +26,11 @@ fun CustomOutlinedTextFieldWithIcon(
     isPasswordVisible: Boolean = false,
     onPasswordToggle: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    textStyle: TextStyle = MaterialTheme.typography.bodyLarge
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    onImeAction: (() -> Unit)? = null // Action on Ime Done key
 ) {
+    val focusManager = LocalFocusManager.current // Manages focus to hide the keyboard
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -44,6 +47,16 @@ fun CustomOutlinedTextFieldWithIcon(
                 }
             }
         },
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default.copy(
+            imeAction = androidx.compose.ui.text.input.ImeAction.Done
+        ),
+        keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+            onDone = {
+                focusManager.clearFocus() // Hide keyboard on Done
+                onImeAction?.invoke()
+            }
+        ),
+        textStyle = textStyle,
         colors = OutlinedTextFieldDefaults.colors(
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
             unfocusedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),

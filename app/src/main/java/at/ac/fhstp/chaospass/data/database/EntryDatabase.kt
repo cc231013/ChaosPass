@@ -8,7 +8,7 @@ import net.sqlcipher.database.SupportFactory
 import at.ac.fhstp.chaospass.data.dao.EntryDao
 import at.ac.fhstp.chaospass.data.entities.Entry
 
-@Database(entities = [Entry::class], version = 1, exportSchema = false)
+@Database(entities = [Entry::class], version = 2, exportSchema = false)
 abstract class EntryDatabase : RoomDatabase() {
     abstract fun entryDao(): EntryDao
 
@@ -23,12 +23,13 @@ abstract class EntryDatabase : RoomDatabase() {
                     EntryDatabase::class.java,
                     "encrypted_entries"
                 )
-                    .openHelperFactory(SupportFactory(passphrase.toByteArray())) // SQLCipher support
+                    .openHelperFactory(SupportFactory(passphrase.toByteArray()))
+                    .fallbackToDestructiveMigration()
                     .build()
+
                 INSTANCE = instance
                 instance
             }
         }
     }
 }
-

@@ -1,10 +1,8 @@
 package at.ac.fhstp.chaospass.data.repository
 
-import at.ac.fhstp.chaospass.utils.EncryptionHelper
 import at.ac.fhstp.chaospass.data.dao.EntryDao
 import at.ac.fhstp.chaospass.data.entities.Entry
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import at.ac.fhstp.chaospass.utils.EncryptionHelper
 
 
 class EntryRepository(

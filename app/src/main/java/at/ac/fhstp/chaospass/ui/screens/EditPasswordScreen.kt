@@ -330,14 +330,21 @@ fun EditPasswordScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = {
-                        // Reset offset and dismiss dialog
-                        dialogOffsetX = 0.dp
-                        dialogOffsetY = 0.dp
-                        showSaveDialog = false
-
-                        navController.popBackStack()
+                        if (chaosModeEnabled.value) {
+                            // Save the data in Chaos Mode when "No" is clicked
+                            viewModel.updateEntry(
+                                Entry(
+                                    id = entryId,
+                                    siteName = siteName,
+                                    username = username,
+                                    password = password
+                                )
+                            )
+                        }
+                        showSaveDialog = false // Dismiss the dialog
+                        navController.popBackStack() // Navigate back
                     }) {
-                        Text("No")
+                        Text(if (chaosModeEnabled.value) "No! I would never!" else "No")
                     }
                 }
             )
