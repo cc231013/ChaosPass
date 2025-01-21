@@ -77,8 +77,7 @@ fun PasswordListScreen(
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val invisibleEntries = remember { mutableSetOf<Int>() } // Track invisible entries by ID
-
+    val invisibleEntries = remember { mutableSetOf<Int>() }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var sortAscending by remember { mutableStateOf(true) }
     val entries by viewModel.entries.collectAsState()
@@ -204,6 +203,43 @@ fun PasswordListScreen(
                                 invisibleEntries = invisibleEntries
                             )
                         }
+                        item {
+                            if (!chaosModeEnabled.value) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically, // Align text and icons vertically
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                ) {
+                                    // Text content with adjacent icons
+                                    Text(
+                                        text = " Swipe right to copy the password ",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+
+                                    // Arrow icons immediately next to the text
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
+                            }
+                        }
+
+
                     }
                 }
             }
@@ -213,7 +249,7 @@ fun PasswordListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
-                    .size(80.dp),
+                    .size(80.dp), // Enlarged FAB
                 containerColor = getColorBasedOnMode(chaosModeEnabled.value, AddGreen, ChaosAddBlue),
                 contentColor = Color.Black
             ) {
@@ -278,7 +314,6 @@ fun SwipeableEntryItem(
                 )
             }
         }
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
