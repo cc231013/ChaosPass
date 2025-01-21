@@ -110,11 +110,6 @@ fun SimonSaysGame(
                         isPasswordField = true,
                         labelColor = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
-                            .clickable {
-                                entry?.password?.let {
-                                    copyToClipboard(context, "Password", it)
-                                }
-                            }
                     )
                 }
             }

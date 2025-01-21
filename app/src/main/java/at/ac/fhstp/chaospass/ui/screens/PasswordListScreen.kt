@@ -77,6 +77,7 @@ fun PasswordListScreen(
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val invisibleEntries = remember { mutableSetOf<Int>() } // Track invisible entries by ID
 
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var sortAscending by remember { mutableStateOf(true) }
@@ -199,46 +200,10 @@ fun PasswordListScreen(
                                 onClick = {
                                     navController.navigate("details/${entry.id}")
                                 },
-                                chaosModeEnabled = chaosModeEnabled.value
+                                chaosModeEnabled = chaosModeEnabled.value,
+                                invisibleEntries = invisibleEntries
                             )
                         }
-                        item {
-                            if (!chaosModeEnabled.value) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically, // Align text and icons vertically
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                                ) {
-                                    // Text content with adjacent icons
-                                    Text(
-                                        text = " Swipe right to copy the password ",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-
-                                    // Arrow icons immediately next to the text
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                        contentDescription = "Arrow Right",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                        contentDescription = "Arrow Right",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                                        contentDescription = "Arrow Right",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                }
-                            }
-                        }
-
-
                     }
                 }
             }
@@ -248,7 +213,7 @@ fun PasswordListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
-                    .size(80.dp), // Enlarged FAB
+                    .size(80.dp),
                 containerColor = getColorBasedOnMode(chaosModeEnabled.value, AddGreen, ChaosAddBlue),
                 contentColor = Color.Black
             ) {
@@ -267,11 +232,12 @@ fun SwipeableEntryItem(
     entry: Entry,
     onSwipeRight: () -> Unit,
     onClick: () -> Unit,
-    chaosModeEnabled: Boolean
+    chaosModeEnabled: Boolean,
+    invisibleEntries: MutableSet<Int>
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     val swipeThreshold = 100f
-    var isTransparent by remember { mutableStateOf(false) }
+    val isTransparent = remember { mutableStateOf(invisibleEntries.contains(entry.id)) }
 
     Box(
         modifier = Modifier
@@ -286,7 +252,8 @@ fun SwipeableEntryItem(
                     onDragEnd = {
                         if (offsetX > swipeThreshold) {
                             if (chaosModeEnabled) {
-                                isTransparent = true
+                                isTransparent.value = true
+                                invisibleEntries.add(entry.id) // Persist transparency state
                             } else {
                                 onSwipeRight()
                             }
@@ -302,12 +269,14 @@ fun SwipeableEntryItem(
                 .background(Color.Transparent),
             contentAlignment = Alignment.CenterStart
         ) {
-            Icon(
-                imageVector = Icons.Default.ContentCopy,
-                contentDescription = "Copy Password",
-                tint = if (chaosModeEnabled || isTransparent) Color.Transparent else Color.Gray,
-                modifier = Modifier.padding(start = 16.dp)
-            )
+            if (!chaosModeEnabled) {
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "Copy Password",
+                    tint = Color.Gray,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
         }
 
         Card(
@@ -318,18 +287,14 @@ fun SwipeableEntryItem(
                 .clickable(onClick = onClick),
             elevation = CardDefaults.cardElevation(4.dp),
             colors = CardDefaults.cardColors(
-                containerColor = if (chaosModeEnabled && isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface
+                containerColor = if (chaosModeEnabled && isTransparent.value) Color.Transparent else MaterialTheme.colorScheme.surface
             )
         ) {
             Text(
                 text = entry.siteName,
-                modifier = Modifier
-                    .padding(16.dp)
-                    .background(
-                        if (chaosModeEnabled && isTransparent) Color.Transparent else Color.Unspecified
-                    ),
+                modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.titleLarge.copy(
-                    color = if (chaosModeEnabled && isTransparent) Color.Transparent else MaterialTheme.colorScheme.onSurface
+                    color = if (chaosModeEnabled && isTransparent.value) Color.Transparent else MaterialTheme.colorScheme.onSurface
                 )
             )
         }

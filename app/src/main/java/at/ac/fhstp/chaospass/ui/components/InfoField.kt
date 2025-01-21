@@ -1,6 +1,7 @@
 package at.ac.fhstp.chaospass.ui.components
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
@@ -38,6 +39,9 @@ fun InfoField(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
+            .clickable {
+                copyToClipboard(context, label, value)
+            }
     ) {
         // Display the label
         Text(

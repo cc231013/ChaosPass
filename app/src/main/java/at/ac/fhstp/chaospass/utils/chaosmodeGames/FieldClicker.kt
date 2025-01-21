@@ -77,11 +77,6 @@ fun FieldClicker(
                     isPasswordField = true,
                     modifier = Modifier
                         .weight(1f)
-                        .clickable {
-                            entry?.password?.let {
-                                copyToClipboard(context, "Password", it)
-                            }
-                        }
                 )
             }
         }

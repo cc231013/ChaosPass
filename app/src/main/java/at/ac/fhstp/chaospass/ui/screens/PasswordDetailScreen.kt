@@ -167,13 +167,7 @@ fun PasswordDetailScreen(
                                         chaosModeEnabled.value,
                                         BackgroundNavy,
                                         ChaosOnColour
-                                    ),
-                                    modifier = Modifier.weight(1f)
-                                        .clickable {
-                                            entry?.password?.let {
-                                                copyToClipboard(context, "Password", it)
-                                            }
-                                        }
+                                    )
                                 )
                             }
                         }
@@ -183,13 +177,7 @@ fun PasswordDetailScreen(
                             label = "Username",
                             value = entry?.username.orEmpty(),
                             backgroundColor = BackgroundBlue,
-                            labelColor = BackgroundNavy,
-                            modifier = Modifier.weight(1f)
-                                .clickable {
-                                    entry?.password?.let {
-                                        copyToClipboard(context, "Password", it)
-                                    }
-                                }
+                            labelColor = BackgroundNavy
                         )
                     }
 
@@ -257,11 +245,6 @@ fun PasswordDetailScreen(
                                 labelColor = BackgroundNavy,
                                 isPasswordField = true,
                                 modifier = Modifier.weight(1f)
-                                    .clickable {
-                                        entry?.password?.let {
-                                            copyToClipboard(context, "Password", it)
-                                        }
-                                    }
                             )
                         }
                     }

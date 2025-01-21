@@ -83,13 +83,7 @@ fun IconGuess(
                     ),
                     labelColor = MaterialTheme.colorScheme.onSurface,
                     isPasswordField = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            entry?.password?.let {
-                                copyToClipboard(context, "Password", it)
-                            }
-                        }
+                    modifier = Modifier.weight(1f)
                 )
             }
         }

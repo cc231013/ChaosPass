@@ -146,9 +146,6 @@ fun TriviaGame(
                     isPasswordField = true,
                     labelColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
-                        .clickable {
-                            copyToClipboard(context, "Password", password)
-                        }
                 )
             }
         }
