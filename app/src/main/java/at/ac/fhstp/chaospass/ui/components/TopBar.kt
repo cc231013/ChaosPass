@@ -56,7 +56,7 @@ fun TopBar(
                             Icon(
                                 imageVector = Icons.Default.ArrowBackIosNew,
                                 contentDescription = "Back",
-                                tint = ChaosKeyPink,
+                                tint = getColorBasedOnMode(chaosModeEnabled, Color.Black, ChaosKeyPink),
                                 modifier = Modifier.size(48.dp),
                             )
                         }
