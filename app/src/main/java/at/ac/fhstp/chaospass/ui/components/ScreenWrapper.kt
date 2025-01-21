@@ -18,7 +18,7 @@ fun ScreenWrapper(
     onBackClick: (() -> Unit)? = null,
     navController: NavHostController,
     currentRoute: String,
-    chaosModeEnabled: State<Boolean>, // Keep it as State<Boolean>
+    chaosModeEnabled: State<Boolean>,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(

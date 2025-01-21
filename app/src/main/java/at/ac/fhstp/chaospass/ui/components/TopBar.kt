@@ -36,7 +36,6 @@ fun TopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (chaosModeEnabled) {
-                    // Swap positions: Logo on the left, Back Button on the right
                     LogoIcon(chaosModeEnabled = chaosModeEnabled)
 
                     if (onBackClick != null) {
@@ -44,26 +43,25 @@ fun TopBar(
                             Icon(
                                 imageVector = Icons.Default.ArrowBackIosNew,
                                 contentDescription = "Back",
-                                tint = getColorBasedOnMode(chaosModeEnabled, Color.Black, ChaosKeyPink),
+                                tint = Color.Black,
                                 modifier = Modifier.size(48.dp),
                             )
                         }
                     } else {
-                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder for consistent alignment
+                        Spacer(modifier = Modifier.width(48.dp))
                     }
                 } else {
-                    // Normal Mode: Back Button on the left, Logo on the right
                     if (onBackClick != null) {
                         IconButton(onClick = { onBackClick() }) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBackIosNew,
                                 contentDescription = "Back",
-                                tint = getColorBasedOnMode(chaosModeEnabled, Color.Black, ChaosKeyPink),
+                                tint = ChaosKeyPink,
                                 modifier = Modifier.size(48.dp),
                             )
                         }
                     } else {
-                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder for consistent alignment
+                        Spacer(modifier = Modifier.width(48.dp))
                     }
 
                     LogoIcon(chaosModeEnabled = chaosModeEnabled)

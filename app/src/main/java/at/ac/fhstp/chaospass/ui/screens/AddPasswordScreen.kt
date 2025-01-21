@@ -71,7 +71,7 @@ fun AddPasswordScreen(
     var showSaveConfirmationDialog by remember { mutableStateOf(false) }
     var showCancelConfirmationDialog by remember { mutableStateOf(false) }
     var cancelDialogCounter by remember { mutableStateOf(0) }
-    val randomCancelLimit = remember { Random.nextInt(1, 10) }
+    val randomCancelLimit = remember { Random.nextInt(2, 10) }
     val fieldsOrder = remember { mutableStateOf(listOf("Site Name", "Username", "Password")) }
 
     var saveDialogOffsetX by remember { mutableStateOf(0.dp) }
@@ -79,7 +79,6 @@ fun AddPasswordScreen(
     var cancelDialogOffsetX by remember { mutableStateOf(0.dp) }
     var cancelDialogOffsetY by remember { mutableStateOf(0.dp) }
 
-    // Check if all fields are filled
     val isSaveEnabled = remember(siteName.value, username.value, password.value) {
         siteName.value.isNotBlank() && username.value.isNotBlank() && password.value.isNotBlank()
     }
@@ -109,7 +108,7 @@ fun AddPasswordScreen(
                 )
             )
 
-            Text(text = "Add New Password", style = MaterialTheme.typography.titleLarge)
+            Text(text = "Add New Entry", style = MaterialTheme.typography.titleLarge)
 
             fieldsOrder.value.forEach { field ->
                 when (field) {
@@ -207,6 +206,7 @@ fun AddPasswordScreen(
                     }
                 },
                 modifier = Modifier.align(Alignment.End),
+                elevation = ButtonDefaults.buttonElevation(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = KeyBlue)
             ) {
                 Icon(
@@ -236,6 +236,7 @@ fun AddPasswordScreen(
                         }
                     },
                     shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = getColorBasedOnMode(
                             chaosModeEnabled.value,
@@ -269,6 +270,7 @@ fun AddPasswordScreen(
                     },
                     enabled = isSaveEnabled, // Enable or disable based on input validation
                     shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isSaveEnabled) {
                             getColorBasedOnMode(
@@ -293,6 +295,8 @@ fun AddPasswordScreen(
 
             // Save Confirmation Dialog
             if (showSaveConfirmationDialog) {
+                var yesClickCount by remember { mutableStateOf(0) }
+                var isYesDisabled by remember { mutableStateOf(false) }
 
                 AlertDialog(
                     onDismissRequest = {
@@ -303,35 +307,64 @@ fun AddPasswordScreen(
                         }
                     },
                     title = { Text("Save Entry?") },
-                    text = { Text("Do you want to save this entry?") },
+                    text = {
+                        Text(
+                            if (chaosModeEnabled.value) {
+                                when {
+                                    yesClickCount >= 10 -> "Like for real, is it so hard to press No?"
+                                    yesClickCount >= 5 -> "Maybe try a different button?"
+                                    else -> "Are you sure? It seems like a bad idea! Think again!"
+                                }
+                            } else {
+                                "Are you sure you want to delete this entry?"
+                            }
+                        )
+                    },
                     modifier = if (chaosModeEnabled.value) {
                         Modifier.offset(x = saveDialogOffsetX, y = saveDialogOffsetY)
                     } else Modifier,
                     confirmButton = {
-                        TextButton(onClick = {
-                            if (chaosModeEnabled.value) {
-                                // Move the dialog slightly in chaos mode
-                                saveDialogOffsetX = (Random.nextInt(-20, 20)).dp
-                                saveDialogOffsetY = (Random.nextInt(-20, 20)).dp
-                            } else {
-                                // Shouldn't happen as dialog is not shown in normal mode
-                            }
-                        }) {
-                            Text("Yes")
+                        TextButton(
+                            onClick = {
+                                if (!isYesDisabled) {
+                                    yesClickCount++
+                                    if (yesClickCount >= 10) {
+                                        isYesDisabled = true
+                                    } else if (chaosModeEnabled.value) {
+                                        saveDialogOffsetX = (Random.nextInt(-20, 20)).dp
+                                        saveDialogOffsetY = (Random.nextInt(-20, 20)).dp
+                                    }
+                                }
+                            },
+                            enabled = !isYesDisabled
+                        ) {
+                            Text(
+                                text = when {
+                                    isYesDisabled -> "Yes (Disabled)"
+                                    yesClickCount >= 5 -> "Maybe try a different button?"
+                                    else -> "Yes"
+                                }
+                            )
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = {
-                            // Save and navigate back in chaos mode when "No" is clicked
-                            viewModel.addEntry(
-                                siteName = siteName.value.trim(),
-                                username = username.value.trim(),
-                                password = password.value.trim()
-                            )
-                            navController.popBackStack()
-                            showSaveConfirmationDialog = false
-                        }) {
-                            Text("No")
+                        TextButton(
+                            onClick = {
+                                viewModel.addEntry(
+                                    siteName = siteName.value.trim(),
+                                    username = username.value.trim(),
+                                    password = password.value.trim()
+                                )
+                                navController.popBackStack()
+                                showSaveConfirmationDialog = false
+                            },
+                            colors = if (chaosModeEnabled.value && yesClickCount >= 10) {
+                                ButtonDefaults.textButtonColors(containerColor = KeyBlue)
+                            } else {
+                                ButtonDefaults.textButtonColors()
+                            }
+                        ) {
+                            Text(if (chaosModeEnabled.value) "No! I would never!" else "No")
                         }
                     }
                 )
@@ -348,7 +381,13 @@ fun AddPasswordScreen(
                         }
                     },
                     title = { Text("Are you sure?") },
-                    text = { Text("Do you really want to cancel?") },
+                    text = {
+                        if (chaosModeEnabled.value) {
+                            Text("Do you really want to cancel? You must click Yes ${randomCancelLimit - cancelDialogCounter} more times!")
+                        } else {
+                            Text("Do you really want to cancel?")
+                        }
+                    },
                     modifier = if (chaosModeEnabled.value) {
                         Modifier.offset(x = cancelDialogOffsetX, y = cancelDialogOffsetY)
                     } else Modifier,
@@ -383,7 +422,11 @@ fun AddPasswordScreen(
                     }
                 )
             }
+
         }
+
     }
 }
+
+
 

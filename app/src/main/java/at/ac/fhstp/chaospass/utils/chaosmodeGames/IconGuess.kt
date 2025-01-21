@@ -41,7 +41,6 @@ fun IconGuess(
     val totalIcons = 6
     var correctIconIndex by remember { mutableStateOf(Random.nextInt(totalIcons)) }
     var selectedIconIndex by remember { mutableStateOf(-1) }
-    var isPasswordVisible by remember { mutableStateOf(false) }
     var isPasswordFieldVisible by remember { mutableStateOf(false) } // New state for password field visibility
     val context = LocalContext.current
 
@@ -76,13 +75,14 @@ fun IconGuess(
             ) {
                 InfoField(
                     label = "Password",
-                    value = if (isPasswordVisible) entry?.password.orEmpty() else "••••••••",
+                    value = entry?.password.orEmpty(),
                     backgroundColor = getColorBasedOnMode(
                         chaosModeEnabled,
                         MaterialTheme.colorScheme.surface,
                         ChaosKeyPink
                     ),
                     labelColor = MaterialTheme.colorScheme.onSurface,
+                    isPasswordField = true,
                     modifier = Modifier
                         .weight(1f)
                         .clickable {
@@ -91,18 +91,6 @@ fun IconGuess(
                             }
                         }
                 )
-
-                // Visibility toggle button
-                IconButton(
-                    onClick = { isPasswordVisible = !isPasswordVisible },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password",
-                        tint = ChaosKeyPink
-                    )
-                }
             }
         }
 

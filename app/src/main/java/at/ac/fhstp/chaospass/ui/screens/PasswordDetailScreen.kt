@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -69,6 +70,7 @@ import at.ac.fhstp.chaospass.utils.chaosmodeGames.TypeRace
 import at.ac.fhstp.chaospass.utils.copyToClipboard
 import at.ac.fhstp.chaospass.utils.getColorBasedOnMode
 import at.ac.fhstp.chaospass.viewmodel.EntryViewModel
+import kotlin.random.Random
 
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -87,10 +89,16 @@ fun PasswordDetailScreen(
     val chaosScenario = if (chaosModeEnabled.value) remember { (1..6).random() } else 0
     val hiddenFields = remember { mutableStateListOf(*Array((10..100).random()) { it }) }
     val hiddenFieldMessage = remember { mutableStateOf("Click to reveal your information!") }
+    var dialogOffsetX by remember { mutableStateOf(0.dp) }
+    var dialogOffsetY by remember { mutableStateOf(0.dp) }
 
 
     ScreenWrapper(
-        onBackClick = { navController.popBackStack() },
+        onBackClick = {
+            navController.navigate("list") {
+                popUpTo("list") { inclusive = false }
+            }
+        },
         navController = navController,
         currentRoute = "details/{entryId}",
         chaosModeEnabled = chaosModeEnabled
@@ -117,7 +125,6 @@ fun PasswordDetailScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                elevation = CardDefaults.cardElevation(8.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = getColorBasedOnMode(
                         chaosModeEnabled.value,
@@ -233,9 +240,10 @@ fun PasswordDetailScreen(
                             // Normal Mode: Default visibility toggle
                             InfoField(
                                 label = "Password",
-                                value = if (isPasswordVisible.value) entry?.password.orEmpty() else "••••••••",
+                                value = entry?.password.orEmpty() ,
                                 backgroundColor = getColorBasedOnMode(chaosModeEnabled.value, BackgroundBlue, ChaosKeyPink),
                                 labelColor = BackgroundNavy,
+                                isPasswordField = true,
                                 modifier = Modifier.weight(1f)
                                     .clickable {
                                         entry?.password?.let {
@@ -243,20 +251,11 @@ fun PasswordDetailScreen(
                                         }
                                     }
                             )
-
-                            IconButton(onClick = { isPasswordVisible.value = !isPasswordVisible.value }) {
-                                Icon(
-                                    imageVector = if (isPasswordVisible.value) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = "Toggle password visibility",
-                                    tint = ChaosBackground
-                                )
-                            }
                         }
                     }
                 }
             }
 
-            // Hint Icon and Hint Text
             if (chaosModeEnabled.value) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -277,7 +276,7 @@ fun PasswordDetailScreen(
                                 2 -> "Oh no! Which one is it?"
                                 3 -> "Catch me if you can!"
                                 4 -> "Are you smart enough?"
-                                5 -> "Simon says: Click the Buttons!"
+                                5 -> "Michail says: Click the Buttons!"
                                 6 -> "Fast! Enter the String!"
                                 else -> "Good luck!"
                             },
@@ -303,28 +302,9 @@ fun PasswordDetailScreen(
                     .padding(top = 16.dp)
             ) {
                 Button(
-                    onClick = { navController.navigate("edit/$entryId") },
-                    shape = MaterialTheme.shapes.large,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = getColorBasedOnMode(
-                            chaosModeEnabled.value,
-                            AddGreen,
-                            ChaosKeyPink
-                        )
-                    ),
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        tint = Color.Black,
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
-
-                Button(
                     onClick = { showConfirmationDialog = true },
                     shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = getColorBasedOnMode(
                             chaosModeEnabled.value,
@@ -341,55 +321,92 @@ fun PasswordDetailScreen(
                         modifier = Modifier.size(32.dp)
                     )
                 }
+                Button(
+                    onClick = { navController.navigate("edit/$entryId") },
+                    shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = getColorBasedOnMode(
+                            chaosModeEnabled.value,
+                            AddGreen,
+                            ChaosKeyPink
+                        )
+                    ),
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = Color.Black,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
             if (showConfirmationDialog) {
+                var yesClickCount by remember { mutableStateOf(0) }
+
                 AlertDialog(
                     onDismissRequest = { showConfirmationDialog = false },
+                    modifier = Modifier.offset(x = dialogOffsetX, y = dialogOffsetY),
                     title = { Text("Delete Entry?") },
                     text = {
                         Text(
                             if (chaosModeEnabled.value) {
-                                "Are you sure? It seems like a bad idea! Think again!"
+                                when {
+                                    yesClickCount >= 10 -> "No more clicks! Try a different button!"
+                                    yesClickCount >= 5 -> " Maybe try a different button?"
+                                    else -> "Are you sure? It seems like a bad idea! Think again!"
+                                }
                             } else {
                                 "Are you sure you want to delete this entry?"
                             }
                         )
                     },
                     confirmButton = {
-                        TextButton(onClick = {
-                            if (chaosModeEnabled.value) {
-                                // Reopen the same dialog for Chaos Mode
-                                showConfirmationDialog = true
-                            } else {
-                                // Delete the entry in normal mode
-                                entry?.let {
-                                    viewModel.deleteEntry(it)
-                                    navController.popBackStack()
+                        TextButton(
+                            onClick = {
+                                if (chaosModeEnabled.value) {
+                                    if (yesClickCount < 10) {
+                                        yesClickCount++
+                                        dialogOffsetX = (Random.nextInt(-20, 20)).dp
+                                        dialogOffsetY = (Random.nextInt(-20, 20)).dp
+                                    }
+                                } else {
+                                    entry?.let {
+                                        viewModel.deleteEntry(it)
+                                        navController.popBackStack()
+                                    }
+                                    showConfirmationDialog = false
                                 }
-                                showConfirmationDialog = false
-                            }
-                        }) {
+                            },
+                            enabled = yesClickCount < 10
+                        ) {
                             Text("Yes")
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = {
-                            if (chaosModeEnabled.value) {
-                                // Open the "Good choice" dialog in Chaos Mode
-                                showConfirmationDialog = false
-                                showGoodChoiceDialog = true
+                        TextButton(
+                            onClick = {
+                                if (chaosModeEnabled.value) {
+                                    showConfirmationDialog = false
+                                    showGoodChoiceDialog = true
+                                } else {
+                                    showConfirmationDialog = false
+                                }
+                            },
+                            colors = if (chaosModeEnabled.value && yesClickCount >= 10) {
+                                ButtonDefaults.textButtonColors(containerColor = KeyBlue)
                             } else {
-                                showConfirmationDialog = false
+                                ButtonDefaults.textButtonColors()
                             }
-                        }) {
+                        ) {
                             Text("No")
                         }
                     }
                 )
             }
-
             if (showGoodChoiceDialog) {
                 AlertDialog(
                     onDismissRequest = { showGoodChoiceDialog = false },

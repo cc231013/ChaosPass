@@ -46,7 +46,6 @@ fun SettingsScreen(
 ) {
     val chaosModeEnabled = viewModel.isChaosMode.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
-    var showExplanationDialog by remember { mutableStateOf(false) }
 
     ScreenWrapper(
         onBackClick = { navController.popBackStack() },
@@ -122,23 +121,6 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Explanation Icon and Text
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "What is Chaos Mode?",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = { showExplanationDialog = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Help,
-                            contentDescription = "Explain Chaos Mode",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
 
             // Confirmation Dialog for Chaos Mode
@@ -146,7 +128,8 @@ fun SettingsScreen(
                 AlertDialog(
                     onDismissRequest = { showDialog = false },
                     title = { Text("Activate Chaos Mode?") },
-                    text = { Text("Do you really want to activate Chaos Mode? It will enable randomized and unpredictable behavior.") },
+                    text = { Text("Do you really want to activate Chaos Mode? Chaos Mode introduces randomized and unpredictable behavior to your app," +
+                            "making it more challenging to interact with. Use it for fun or to test your patience!" ) },
                     confirmButton = {
                         TextButton(onClick = {
                             viewModel.toggleChaosMode(true)
@@ -163,24 +146,6 @@ fun SettingsScreen(
                 )
             }
 
-            // Explanation Dialog
-            if (showExplanationDialog) {
-                AlertDialog(
-                    onDismissRequest = { showExplanationDialog = false },
-                    title = { Text("What is Chaos Mode?") },
-                    text = {
-                        Text(
-                            "Chaos Mode introduces randomized and unpredictable behavior to your app, " +
-                                    "making it more challenging to interact with. Use it for fun or to test your patience!"
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { showExplanationDialog = false }) {
-                            Text("Got it!")
-                        }
-                    }
-                )
-            }
         }
     }
 }

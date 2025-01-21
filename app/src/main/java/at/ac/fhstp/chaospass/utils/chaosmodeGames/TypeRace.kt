@@ -59,7 +59,6 @@ fun TypeRace(
     val speed = if (chaosModeEnabled) 5.dp else 3.dp
     val timerRunning = remember { mutableStateOf(true) }
     val isChallengeCompleted = remember { mutableStateOf(false) }
-    var isPasswordVisible by remember { mutableStateOf(false) }
 
     val handler = remember { Handler(Looper.getMainLooper()) }
     DisposableEffect(Unit) {
@@ -177,9 +176,10 @@ fun TypeRace(
                 ) {
                     InfoField(
                         label = "Password",
-                        value = if (isPasswordVisible) entry?.password.orEmpty() else "••••••••",
+                        value = entry?.password.orEmpty(),
                         backgroundColor = MaterialTheme.colorScheme.surface,
                         labelColor = MaterialTheme.colorScheme.onSurface,
+                        isPasswordField = true,
                         modifier = Modifier.weight(1f)
                             .clickable {
                                 entry?.password?.let {
@@ -188,13 +188,6 @@ fun TypeRace(
                             }
                     )
 
-                    // Visibility toggle button
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(
-                            imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password"
-                        )
-                    }
                 }
             }
         }

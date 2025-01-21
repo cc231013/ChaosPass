@@ -106,17 +106,17 @@ fun EditPasswordScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
 
-            verticalArrangement = Arrangement.spacedBy(8.dp), // Add space between components
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
 
         ) {
             // Header Box
             HeaderBox(
                 icon = Icons.Default.Edit,
-                backgroundColor = getColorBasedOnMode(chaosModeEnabled.value, Color.White, ChaosEdit)
+                backgroundColor = getColorBasedOnMode(chaosModeEnabled.value, AddGreen, ChaosEdit)
             )
 
-            Spacer(modifier = Modifier.height(16.dp)) // Space between header and fields
+            Spacer(modifier = Modifier.height(16.dp))
 
             fieldsOrder.value.forEach { field ->
                 when (field) {
@@ -214,6 +214,7 @@ fun EditPasswordScreen(
                     }
                 },
                 modifier = Modifier.align(Alignment.End),
+                elevation = ButtonDefaults.buttonElevation(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = KeyBlue)
             ) {
                 Icon(
@@ -224,21 +225,52 @@ fun EditPasswordScreen(
                 Text("Generate Password")
             }
 
-            Spacer(modifier = Modifier.height(16.dp)) // Space between buttons and other elements
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Save and Cancel Buttons
             Row(
                 horizontalArrangement = Arrangement.SpaceAround,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Save Button
+
                 Button(
                     onClick = {
                         if (chaosModeEnabled.value) {
-                            // Show looping save dialog in chaos mode
+                            countdownValue = (3..25).random()
+                            showCancelDialog = true
+                            coroutineScope.launch {
+                                while (countdownValue > 0) {
+                                    delay(1000)
+                                    countdownValue--
+                                }
+                                showCancelDialog = false
+                                navController.popBackStack()
+                            }
+                        } else {
+                            // Normal cancel functionality
+                            navController.popBackStack()
+                        }
+                    },
+                    shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = getColorBasedOnMode(chaosModeEnabled.value, MaterialTheme.colorScheme.error, ChaosCancel)
+                    ),
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "Cancel",
+                        tint = MaterialTheme.colorScheme.onError,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        if (chaosModeEnabled.value) {
                             showSaveDialog = true
                         } else {
-                            // Normal save functionality
+
                             viewModel.updateEntry(
                                 Entry(
                                     id = entryId,
@@ -252,6 +284,7 @@ fun EditPasswordScreen(
                     },
                     enabled = isSaveEnabled,
                     shape = MaterialTheme.shapes.large,
+                    elevation = ButtonDefaults.buttonElevation(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isSaveEnabled) {
                             getColorBasedOnMode(
@@ -270,86 +303,85 @@ fun EditPasswordScreen(
                         modifier = Modifier.size(32.dp)
                     )
                 }
-
-                // Cancel Button
-                Button(
-                    onClick = {
-                        if (chaosModeEnabled.value) {
-                            // Random countdown dialog in chaos mode
-                            countdownValue = (3..25).random()
-                            showCancelDialog = true
-                            coroutineScope.launch {
-                                while (countdownValue > 0) {
-                                    delay(1000)
-                                    countdownValue--
-                                }
-                                showCancelDialog = false
-                                navController.popBackStack()
-                            }
-                        } else {
-                            // Normal cancel functionality
-                            navController.popBackStack()
-                        }
-                    },
-                    shape = MaterialTheme.shapes.large,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = getColorBasedOnMode(chaosModeEnabled.value, MaterialTheme.colorScheme.error, ChaosCancel)
-                    ),
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Cancel,
-                        contentDescription = "Cancel",
-                        tint = MaterialTheme.colorScheme.onError,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
             }
         }
 
-        // Save Confirmation Dialog for Chaos Mode
         if (showSaveDialog) {
+            var yesClickCount by remember { mutableStateOf(0) }
+            var isYesDisabled by remember { mutableStateOf(false) }
+
             AlertDialog(
                 onDismissRequest = {
                     showSaveDialog = false
-                    // Reset dialog position on dismiss
                     dialogOffsetX = 0.dp
                     dialogOffsetY = 0.dp
                 },
                 title = { Text("Save Entry?") },
-                text = { Text("Do you want to save this entry?") },
-                modifier = Modifier.offset(x = dialogOffsetX, y = dialogOffsetY), // Apply dynamic offset
+                text = {
+                    Text(
+                        if (chaosModeEnabled.value) {
+                            when {
+                                yesClickCount >= 10 -> "Like for real, is it so hard to press No?"
+                                yesClickCount >= 5 -> "Maybe try a different button?"
+                                else -> "Are you sure? It seems like a bad idea! Think again!"
+                            }
+                        } else {
+                            "Are you sure you want to delete this entry?"
+                        }
+                    )
+                },
+                modifier = Modifier.offset(x = dialogOffsetX, y = dialogOffsetY),
                 confirmButton = {
-                    TextButton(onClick = {
-                        // Randomize dialog position to make it harder to click "Yes"
-                        dialogOffsetX = (Random.nextInt(-50, 50)).dp
-                        dialogOffsetY = (Random.nextInt(-50, 50)).dp
-                    }) {
-                        Text("Yes")
+                    TextButton(
+                        onClick = {
+                            if (!isYesDisabled) {
+                                yesClickCount++
+                                if (yesClickCount >= 10) {
+                                    isYesDisabled = true
+                                } else {
+                                    dialogOffsetX = (Random.nextInt(-50, 50)).dp
+                                    dialogOffsetY = (Random.nextInt(-50, 50)).dp
+                                }
+                            }
+                        },
+                        enabled = !isYesDisabled // Disable the Yes button after 10 clicks
+                    ) {
+                        Text(
+                            text = when {
+                                isYesDisabled -> "Yes (Disabled)"
+                                else -> "Yes"
+                            }
+                        )
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = {
-                        if (chaosModeEnabled.value) {
-                            // Save the data in Chaos Mode when "No" is clicked
-                            viewModel.updateEntry(
-                                Entry(
-                                    id = entryId,
-                                    siteName = siteName,
-                                    username = username,
-                                    password = password
+                    TextButton(
+                        onClick = {
+                            if (chaosModeEnabled.value) {
+                                viewModel.updateEntry(
+                                    Entry(
+                                        id = entryId,
+                                        siteName = siteName,
+                                        username = username,
+                                        password = password
+                                    )
                                 )
-                            )
+                            }
+                            showSaveDialog = false
+                            navController.popBackStack()
+                        },
+                        colors = if (chaosModeEnabled.value && yesClickCount >= 10) {
+                            ButtonDefaults.textButtonColors(containerColor = KeyBlue)
+                        } else {
+                            ButtonDefaults.textButtonColors()
                         }
-                        showSaveDialog = false // Dismiss the dialog
-                        navController.popBackStack() // Navigate back
-                    }) {
+                    ) {
                         Text(if (chaosModeEnabled.value) "No! I would never!" else "No")
                     }
                 }
             )
         }
-        // Cancel Confirmation Dialog for Chaos Mode
+
         if (showCancelDialog) {
             AlertDialog(
                 onDismissRequest = { showCancelDialog = false },

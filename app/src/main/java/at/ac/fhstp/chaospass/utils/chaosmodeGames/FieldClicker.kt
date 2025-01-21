@@ -39,7 +39,6 @@ fun FieldClicker(
 ) {
     val buttonColor = remember { mutableStateOf(ChaosEdit) }
     val context = LocalContext.current
-    val isPasswordVisible = remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -62,10 +61,9 @@ fun FieldClicker(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                // Password InfoField with visibility toggle
                 InfoField(
                     label = "Password",
-                    value = if (isPasswordVisible.value) entry?.password.orEmpty() else "••••••••",
+                    value = entry?.password.orEmpty(),
                     backgroundColor = getColorBasedOnMode(
                         chaosModeEnabled,
                         BackgroundBlue,
@@ -76,6 +74,7 @@ fun FieldClicker(
                         BackgroundNavy,
                         ChaosOnColour
                     ),
+                    isPasswordField = true,
                     modifier = Modifier
                         .weight(1f)
                         .clickable {
@@ -84,20 +83,6 @@ fun FieldClicker(
                             }
                         }
                 )
-
-                // Visibility Toggle Button
-                androidx.compose.material3.IconButton(
-                    onClick = { isPasswordVisible.value = !isPasswordVisible.value }
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = if (isPasswordVisible.value)
-                            androidx.compose.material.icons.Icons.Default.VisibilityOff
-                        else
-                            androidx.compose.material.icons.Icons.Default.Visibility,
-                        contentDescription = if (isPasswordVisible.value) "Hide Password" else "Show Password",
-                        tint = ChaosKeyPink
-                    )
-                }
             }
         }
 

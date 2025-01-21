@@ -3,7 +3,6 @@ package at.ac.fhstp.chaospass.utils
 import android.util.Log
 import java.util.Base64
 import javax.crypto.Cipher
-import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 class EncryptionHelper {

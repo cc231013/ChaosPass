@@ -14,12 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Key
@@ -82,10 +87,8 @@ fun PasswordListScreen(
     val filteredEntries = remember(searchQuery, sortAscending, entries, chaosModeEnabled.value) {
         entries.filter {
             if (chaosModeEnabled.value) {
-                // Chaos mode: Search by password
                 it.password.contains(searchQuery.text, ignoreCase = true)
             } else {
-                // Normal mode: Search by site name
                 it.siteName.contains(searchQuery.text, ignoreCase = true)
             }
         }.sortedWith(
@@ -98,8 +101,6 @@ fun PasswordListScreen(
             }
         )
     }
-
-
 
     val focusManager = LocalFocusManager.current
 
@@ -114,7 +115,7 @@ fun PasswordListScreen(
                 .padding(paddingValues)
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
-                        focusManager.clearFocus() // Clear focus when clicking outside
+                        focusManager.clearFocus()
                     })
                 }
         ) {
@@ -125,11 +126,13 @@ fun PasswordListScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 HeaderBox(
-                    icon = Icons.Default.Key, rotation = 135f, backgroundColor = getColorBasedOnMode(
-                    chaosModeEnabled.value,
-                    KeyBlue,
-                    ChaosKeyPink
-                )
+                    icon = Icons.Default.Key,
+                    rotation = 135f,
+                    backgroundColor = getColorBasedOnMode(
+                        chaosModeEnabled.value,
+                        KeyBlue,
+                        ChaosKeyPink
+                    )
                 )
 
                 Row(
@@ -140,24 +143,17 @@ fun PasswordListScreen(
                         value = searchQuery,
                         onValueChange = { newValue ->
                             if (chaosModeEnabled.value) {
-                                // Apply random uppercase and lowercase transformation
-                                val transformedValue = newValue.text.map { char ->
-                                    if ((0..1).random() == 0) char.uppercaseChar() else char.lowercaseChar()
-                                }.joinToString("")
-                                searchQuery = TextFieldValue(transformedValue, newValue.selection)
+                                searchQuery = newValue
+                                verticalOffset += if (sortAscending) -1f else 1f
                             } else {
-                                // Allow normal input in normal mode
                                 searchQuery = newValue
                             }
-
-                            // Update the vertical offset based on sorting order
-                            verticalOffset += if (sortAscending) -1f else 1f // Move slightly up or down
                         },
-                        label = if (chaosModeEnabled.value) "Search by Password Character" else "Search by Site Name",
+                        label = if (chaosModeEnabled.value) "Search Entries by Password Character" else "Search Entries by Site Name",
                         modifier = Modifier
                             .weight(1f)
-                            .offset(y = verticalOffset.dp) // Apply vertical movement
-                            .onFocusChanged { /* Handle focus changes if needed */ }
+                            .offset(y = verticalOffset.dp)
+                            .onFocusChanged { }
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -178,7 +174,17 @@ fun PasswordListScreen(
                 ) {
                     if (filteredEntries.isEmpty()) {
                         item {
-                            Text("No entries found. Add some passwords!")
+                            Text(
+                                text = " No entries found.",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Text(
+                                text = "  Add a new entry!",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     } else {
                         items(filteredEntries, key = { it.id }) { entry ->
@@ -196,6 +202,43 @@ fun PasswordListScreen(
                                 chaosModeEnabled = chaosModeEnabled.value
                             )
                         }
+                        item {
+                            if (!chaosModeEnabled.value) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically, // Align text and icons vertically
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                                ) {
+                                    // Text content with adjacent icons
+                                    Text(
+                                        text = " Swipe right to copy the password ",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+
+                                    // Arrow icons immediately next to the text
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = "Arrow Right",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
+                            }
+                        }
+
+
                     }
                 }
             }
@@ -204,11 +247,16 @@ fun PasswordListScreen(
                 onClick = { navController.navigate("add") },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .size(80.dp), // Enlarged FAB
                 containerColor = getColorBasedOnMode(chaosModeEnabled.value, AddGreen, ChaosAddBlue),
                 contentColor = Color.Black
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Password")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Add Password",
+                    modifier = Modifier.size(36.dp)
+                )
             }
         }
     }
@@ -223,7 +271,7 @@ fun SwipeableEntryItem(
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     val swipeThreshold = 100f
-    var isTransparent by remember { mutableStateOf(false) } // Transparency state for chaos mode
+    var isTransparent by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -231,7 +279,6 @@ fun SwipeableEntryItem(
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { _, dragAmount ->
-                        // Only allow positive (rightward) drag
                         if (dragAmount > 0) {
                             offsetX += dragAmount
                         }
@@ -239,10 +286,9 @@ fun SwipeableEntryItem(
                     onDragEnd = {
                         if (offsetX > swipeThreshold) {
                             if (chaosModeEnabled) {
-                                // Make the entry visually transparent
                                 isTransparent = true
                             } else {
-                                onSwipeRight() // Normal behavior
+                                onSwipeRight()
                             }
                         }
                         offsetX = 0f
@@ -250,7 +296,6 @@ fun SwipeableEntryItem(
                 )
             }
     ) {
-        // Background for the swipe action
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -265,7 +310,6 @@ fun SwipeableEntryItem(
             )
         }
 
-        // Foreground: Entry card
         Card(
             modifier = Modifier
                 .fillMaxWidth()

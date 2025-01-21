@@ -24,8 +24,7 @@ fun BottomNavigationBar(
     chaosModeEnabled: State<Boolean> // Pass the chaos mode state
 ) {
     val backgroundColor = if (chaosModeEnabled.value) ChaosAddBlue else BackgroundNavy
-    val contentColor = if (chaosModeEnabled.value) ChaosOnColour else Color.Black
-
+    val contentColor = if (chaosModeEnabled.value) ChaosOnColour else Color.White
     NavigationBar(
         containerColor = backgroundColor,
         contentColor = contentColor

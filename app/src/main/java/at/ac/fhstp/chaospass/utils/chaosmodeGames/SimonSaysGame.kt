@@ -65,7 +65,7 @@ fun SimonSaysGame(
     val playerSequence = remember { mutableStateListOf<Color>() }
     var sequenceGameComplete by remember { mutableStateOf(false) }
     var isSequenceVisible by remember { mutableStateOf(true) }
-    var showRestartButton by remember { mutableStateOf(false) }
+    var showWrongMessage by remember { mutableStateOf(false) }
 
     val handler = remember { Handler(Looper.getMainLooper()) }
 
@@ -90,47 +90,32 @@ fun SimonSaysGame(
         contentAlignment = Alignment.Center,
     ) {
         if (sequenceGameComplete) {
-            // Display the password field after successful completion
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
-
-                // Password field with visibility toggle
-                var isPasswordVisible by remember { mutableStateOf(false) }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     InfoField(
                         label = "Password",
-                        value = if (isPasswordVisible) entry?.password.orEmpty() else "••••••••",
+                        value = entry?.password.orEmpty(),
                         backgroundColor = getColorBasedOnMode(
                             chaosModeEnabled.value,
                             MaterialTheme.colorScheme.surface,
                             ChaosKeyPink
                         ),
+                        isPasswordField = true,
                         labelColor = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
-                                            .clickable {
-                                                entry?.password?.let {
-                                                    copyToClipboard(context, "Password", it)
-                                                }
-                                            }
+                            .clickable {
+                                entry?.password?.let {
+                                    copyToClipboard(context, "Password", it)
+                                }
+                            }
                     )
-
-                    // Visibility toggle button
-                    IconButton(
-                        onClick = { isPasswordVisible = !isPasswordVisible },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password",
-                            tint = ChaosKeyPink
-                        )
-                    }
                 }
             }
         } else {
@@ -148,38 +133,46 @@ fun SimonSaysGame(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.wrapContentSize()
-                    ) {
-                        currentSequence.forEach { color ->
-                            Box(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .background(color, shape = MaterialTheme.shapes.small)
-                            )
+                }
+
+                // Fixed height for the sequence area to prevent layout shifting
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSequenceVisible) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.wrapContentSize()
+                        ) {
+                            currentSequence.forEach { color ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .background(color, shape = MaterialTheme.shapes.small)
+                                )
+                            }
                         }
+                    } else {
+                        Text(
+                            text = "Input the sequence below:",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = "Michail says:",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
                 // Display player's sequence
                 if (playerSequence.isNotEmpty()) {
-                    Text(
-                        text = "Your Sequence:",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
+                            .fillMaxWidth()
                             .wrapContentSize()
                     ) {
                         playerSequence.forEach { color ->
@@ -227,42 +220,39 @@ fun SimonSaysGame(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Submit button
+                // Combined Submit and Restart Button
                 Button(
                     onClick = {
-                        Log.d("SimonSaysGame", "Submit Pressed")
-                        Log.d("SimonSaysGame", "Generated Sequence: $currentSequence")
-                        Log.d("SimonSaysGame", "Player Sequence: $playerSequence")
-                        if (playerSequence.size == currentSequence.size &&
-                            playerSequence.zip(currentSequence).all { (player, target) -> player == target }
-                        ) {
-                            sequenceGameComplete = true
-                            onComplete()
+                        if (!showWrongMessage) {
+                            if (playerSequence.size == currentSequence.size &&
+                                playerSequence.zip(currentSequence).all { (player, target) -> player == target }
+                            ) {
+                                sequenceGameComplete = true
+                                onComplete()
+                            } else {
+                                showWrongMessage = true
+                            }
                         } else {
-                            showRestartButton = true
+                            // Reset the game
+                            playerSequence.clear()
+                            currentSequence = List(4) { colorList.random() }
+                            showWrongMessage = false
+                            Log.d("SimonSaysGame", "New Sequence Generated: $currentSequence")
                         }
                     },
-                    enabled = playerSequence.size == currentSequence.size,
+                    enabled = playerSequence.size == currentSequence.size || showWrongMessage,
                     modifier = Modifier.padding(top = 16.dp)
                 ) {
-                    Text("Submit")
+                    Text(if (showWrongMessage) "Restart" else "Submit")
                 }
 
-                // Restart option on failure
-                if (showRestartButton) {
+                if (showWrongMessage) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Wrong Sequence! Try Again.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = ChaosCancel
                     )
-                    Button(onClick = {
-                        playerSequence.clear()
-                        showRestartButton = false
-                        currentSequence = List(4) { colorList.random() }
-                        Log.d("SimonSaysGame", "New Sequence Generated: $currentSequence")
-                    }) {
-                        Text("Restart")
-                    }
                 }
             }
         }

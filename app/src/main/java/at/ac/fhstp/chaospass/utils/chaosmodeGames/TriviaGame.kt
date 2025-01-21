@@ -5,22 +5,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -39,7 +38,6 @@ fun TriviaGame(
     chaosModeEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    // Pool of trivia questions
     val triviaQuestions = listOf(
         "What is the derivative of x^2?" to "2x",
         "Who painted the Sistine Chapel ceiling?" to "michelangelo",
@@ -81,53 +79,57 @@ fun TriviaGame(
     var currentQuestionIndex by remember { mutableStateOf(Random.nextInt(triviaQuestions.size)) }
     var answer by remember { mutableStateOf("") }
     var feedbackMessage by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Display current question
-        Text(
-            text = triviaQuestions[currentQuestionIndex].first,
-            style = androidx.compose.material3.MaterialTheme.typography.bodyLarge
-        )
+        if (!feedbackMessage.startsWith("Correct!")) {
+            // Display current question
+            Text(
+                text = triviaQuestions[currentQuestionIndex].first,
+                style = MaterialTheme.typography.bodyLarge
+            )
 
-        // Answer input field
-        OutlinedTextField(
-            value = answer,
-            onValueChange = { answer = it },
-            label = { Text("Your Answer") },
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done,
-                keyboardType = KeyboardType.Text
-            ),
-            keyboardActions = KeyboardActions(onDone = {}),
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Answer input field
+            OutlinedTextField(
+                value = answer,
+                onValueChange = { answer = it },
+                label = { Text("Your Answer") },
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Text
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        keyboardController?.hide() // Hides the keyboard
+                    }
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        // Feedback for correct/incorrect answer
+            // Submit button
+            Button(onClick = {
+                if (answer.equals(triviaQuestions[currentQuestionIndex].second, ignoreCase = true)) {
+                    feedbackMessage = "Correct!"
+                    onCorrectAnswer()
+                } else {
+                    feedbackMessage = "Wrong! Try again."
+                    currentQuestionIndex = Random.nextInt(triviaQuestions.size)
+                    answer = ""
+                }
+            }) {
+                Text("Submit")
+            }
+        }
+
         if (feedbackMessage.isNotEmpty()) {
             Text(text = feedbackMessage)
         }
 
-        // Submit button
-        Button(onClick = {
-            if (answer.equals(triviaQuestions[currentQuestionIndex].second, ignoreCase = true)) {
-                feedbackMessage = "Correct!"
-                onCorrectAnswer()
-            } else {
-                feedbackMessage = "Wrong! Try again."
-                currentQuestionIndex = Random.nextInt(triviaQuestions.size) // Pick a new question
-                answer = ""
-            }
-        }) {
-            Text("Submit")
-        }
-
-        // Display the password field with visibility toggle
         if (feedbackMessage.startsWith("Correct!")) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -135,29 +137,19 @@ fun TriviaGame(
             ) {
                 InfoField(
                     label = "Password",
-                    value = if (isPasswordVisible) password else "••••••••",
+                    value = password,
                     backgroundColor = getColorBasedOnMode(
                         chaosModeEnabled,
                         MaterialTheme.colorScheme.surface,
                         ChaosKeyPink
                     ),
+                    isPasswordField = true,
                     labelColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                         .clickable {
                             copyToClipboard(context, "Password", password)
                         }
                 )
-
-                IconButton(
-                    onClick = { isPasswordVisible = !isPasswordVisible },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (isPasswordVisible) "Hide Password" else "Show Password",
-                        tint = ChaosKeyPink
-                    )
-                }
             }
         }
     }
