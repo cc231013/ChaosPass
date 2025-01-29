@@ -1,15 +1,12 @@
 package at.ac.fhstp.chaospass.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,10 +21,13 @@ fun LogoIcon(chaosModeEnabled: Boolean) {
     val backgroundColor = if (chaosModeEnabled) ChaosAddBlue else Color.Black
     val logoText = if (chaosModeEnabled) "Cp" else "cP"
 
+    var showDialog by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .size(48.dp)
-            .background(Color.Transparent, shape = MaterialTheme.shapes.small),
+            .background(Color.Transparent, shape = MaterialTheme.shapes.small)
+            .clickable { showDialog = true }, // Make the icon clickable
         contentAlignment = Alignment.Center
     ) {
         // Background Box
@@ -52,7 +52,26 @@ fun LogoIcon(chaosModeEnabled: Boolean) {
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 8.dp) // Adjust position if necessary
+                .offset(y = 8.dp)
+        )
+    }
+
+    // Dialog for App Information
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("About ChaosPass") },
+            text = {
+                Text(
+                    "Welcome to ChaosPass, a password manager that stores your passwords safely in a local encrypted database. " +
+                            "Try out ChaosMode if you want a little excitement and challenge when accessing your passwords!"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("OK")
+                }
+            }
         )
     }
 }
